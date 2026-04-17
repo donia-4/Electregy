@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Validators\" />
+	<Folder Include="DTOs\" />
+	<Folder Include="Features\" />
+	<Folder Include="Interfaces\" />
+  </ItemGroup>
+	
+  <ItemGroup>
+	<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PeakWise.Domain\PeakWise.Domain.csproj" />
+	<ProjectReference Include="..\PeakWise.Shared\PeakWise.Shared.csproj" />
+
+	  <ProjectReference Include="..\PeakWise.Infrastructure\PeakWise.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

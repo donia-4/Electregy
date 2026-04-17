@@ -1,0 +1,6 @@
+@PeakWise.API_HostAddress = http://localhost:5082
+
+GET {{PeakWise.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
