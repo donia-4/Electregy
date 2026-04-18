@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PeakWise.Domain.Entities;
+using PeakWise.Domain.Entities.Tokens;
 
 public class AppDbContext : IdentityDbContext<AppUser, Role, string>
 {
@@ -9,6 +10,7 @@ public class AppDbContext : IdentityDbContext<AppUser, Role, string>
     {
     }
 
+    public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
     public DbSet<Device> Devices { get; set; }
     public DbSet<Reading> Readings { get; set; }
     public DbSet<Alert> Alerts { get; set; }

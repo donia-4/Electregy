@@ -9,8 +9,6 @@
 	<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.15" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Common\" />
-	 <Folder Include="Entities\" />
 	 <Folder Include="Enums\" />
   </ItemGroup>
 
