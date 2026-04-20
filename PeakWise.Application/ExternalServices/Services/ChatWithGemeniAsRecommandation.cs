@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
 
-namespace PeakWise.Domain.Entities
+namespace PeakWise.Application.ExternalServices.Services
 {
-    public class Role : IdentityRole
-    {     
+    internal class ChatWithGemeniAsRecommandation
+    {
     }
 }

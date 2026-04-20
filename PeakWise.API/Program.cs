@@ -1,20 +1,22 @@
-using System;
-using System.Text;
-using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PeakWise.Application.DTOs.Auth; 
-using PeakWise.Application.Features; 
+using PeakWise.API.ExceptionHandling;
+using PeakWise.API.Middlewares;
+using PeakWise.Application.DTOs.Auth;
+using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
-using PeakWise.Domain.Common; 
-using PeakWise.Domain.Entities; 
+using PeakWise.Domain.Common;
+using PeakWise.Domain.Entities;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
+using System;
+using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,7 +101,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"])),
-        ClockSkew = TimeSpan.Zero 
+        ClockSkew = TimeSpan.Zero
     };
 });
 
@@ -113,15 +115,26 @@ builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 
+
+
+// =======================================================================
+// 5. Global Exception Handling with ProblemDetails And Custom Middleware
+// =======================================================================
+builder.Services.AddProblemDetails();
+builder.Services.AddTransient<StopwatchRequestMiddleware>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+
+
 // ==========================================
-// 5. FluentValidation Registration
+// 6. FluentValidation Registration
 // ==========================================
 builder.Services.AddValidatorsFromAssemblyContaining<CreateDeviceValidator>();
 
 var app = builder.Build();
 
 // ==========================================
-// 6. Database Seeding 
+// 7. Database Seeding 
 // ==========================================
 using (var scope = app.Services.CreateScope())
 {
@@ -151,7 +164,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseExceptionHandler();
+app.UseMiddleware<StopwatchRequestMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
