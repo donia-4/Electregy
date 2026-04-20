@@ -11,8 +11,9 @@ namespace PeakWise.Application.DTOs.Devices
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public DeviceType Type { get; set; }
+        public string Type { get; set; }
         public double Watts { get; set; }
         public double HoursPerDay { get; set; }
+        public double EstimatedMonthlyCostEGP { get; set; }
     }
 }

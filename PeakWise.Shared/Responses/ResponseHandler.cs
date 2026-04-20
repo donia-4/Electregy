@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace PeakWise.Shared.Responses
 {
@@ -37,6 +37,15 @@ namespace PeakWise.Shared.Responses
                 StatusCode = System.Net.HttpStatusCode.Unauthorized,
                 Succeeded = true,
                 Message = Message
+            };
+        }
+        public Response<T> Forbidden<T>(string message = null)
+        {
+            return new Response<T>
+            {
+                StatusCode = HttpStatusCode.Forbidden,
+                Succeeded = false,
+                Message = message
             };
         }
         public Response<T> BadRequest<T>(string Message = null)
