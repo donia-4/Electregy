@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace PeakWise.Application.ExternalServices.Settings
 {
-    internal class GemeniSettings
+    public class GemeniSettings
     {
+        public string ApiKey { get; set; }
+        //public string ApiKey1 { get; set; }
+        public string Url { get; set; }
     }
 }

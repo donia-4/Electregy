@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using PeakWise.API.ExceptionHandling;
 using PeakWise.API.Middlewares;
 using PeakWise.Application.DTOs.Auth;
+using PeakWise.Application.ExternalServices.Services;
 using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
@@ -114,7 +115,7 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
-
+builder.Services.AddScoped<IChatWithGemeniAsChatbot,ChatWithGemeniAsChatbot>();
 
 
 // =======================================================================
@@ -123,6 +124,7 @@ builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddTransient<StopwatchRequestMiddleware>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 
 
 

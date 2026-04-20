@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PeakWise.Application.ExternalServices
+namespace PeakWise.Application.ExternalServices.Services
 {
-    internal interface IChatWithGemeniAsRecommandation
+    public interface IChatWithGemeniAsRecommandation
     {
     }
 }

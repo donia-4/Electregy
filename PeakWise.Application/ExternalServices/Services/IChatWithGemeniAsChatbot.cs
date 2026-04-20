@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PeakWise.Application.ExternalServices
+namespace PeakWise.Application.ExternalServices.Services
 {
-    internal interface IChatWithGemeniAsChatbot
+    public interface IChatWithGemeniAsChatbot
     {
+        Task<string> ChatWithGemeniAsChatbotAsync(string userInput,CancellationToken ct);
     }
 }
