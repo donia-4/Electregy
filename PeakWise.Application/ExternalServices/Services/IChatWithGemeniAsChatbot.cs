@@ -8,6 +8,6 @@ namespace PeakWise.Application.ExternalServices.Services
 {
     public interface IChatWithGemeniAsChatbot
     {
-        Task<string> ChatWithGemeniAsChatbotAsync(string userInput,CancellationToken ct);
+        Task<string> ChatWithGemeniAsChatbotAsync(string userInput,string userId,CancellationToken ct);
     }
 }

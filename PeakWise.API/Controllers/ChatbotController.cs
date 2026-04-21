@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PeakWise.Application.ExternalServices.Services;
+using System.Security.Claims;
 
 namespace PeakWise.API.Controllers
 {
@@ -18,9 +19,9 @@ namespace PeakWise.API.Controllers
         [HttpPost("chat")]
         public async Task<IActionResult> Chat([FromBody] string userInput, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(userInput))
-                return BadRequest("User input cannot be empty.");
-            var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotAsync(userInput, ct);
+           
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotAsync(userInput, userId, ct);
             return Ok(new { Response = response });
         }
     }

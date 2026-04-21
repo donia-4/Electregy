@@ -116,6 +116,7 @@ builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddScoped<IChatWithGemeniAsChatbot,ChatWithGemeniAsChatbot>();
+builder.Services.AddSignalR();
 
 
 // =======================================================================
@@ -126,7 +127,17 @@ builder.Services.AddTransient<StopwatchRequestMiddleware>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 
-
+builder.Services.AddCors(opt =>
+{
+    opt.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true);
+        });
+});
 
 // ==========================================
 // 6. FluentValidation Registration
@@ -164,13 +175,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseExceptionHandler();
 app.UseMiddleware<StopwatchRequestMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot");   
 app.MapControllers();
 
 app.Run();

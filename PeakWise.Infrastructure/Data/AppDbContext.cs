@@ -23,4 +23,10 @@ public class AppDbContext : IdentityDbContext<AppUser, Role, string>
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder
+            .Properties<Enum>()
+            .HaveConversion<string>();
+    }
 }
