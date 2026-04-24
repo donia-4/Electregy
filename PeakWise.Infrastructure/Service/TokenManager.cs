@@ -72,6 +72,8 @@ namespace PeakWise.Infrastructure.Service
 
         public async Task<T?> ExecuteWithRetry<T>(Func<string, Task<T>> action)
         {
+            Exception? lastException = null;
+
             for (int i = 0; i < _tokens.Count; i++)
             {
                 var token = GetToken();
@@ -82,13 +84,18 @@ namespace PeakWise.Infrastructure.Service
                     MarkSuccess(token.Value);
                     return result;
                 }
-                catch
+                catch(Exception ex)
                 {
                     MarkFailed(token.Value);
+                    lastException = ex;
+
+                    Console.WriteLine($"Token failed: {ex.Message}");
+                    Console.WriteLine(ex.Message);
+                    throw;
                 }
             }
 
-            return default;
+            throw lastException ?? new Exception("All tokens failed");
         }
     }
 }

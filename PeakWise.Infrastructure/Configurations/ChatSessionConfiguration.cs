@@ -16,8 +16,8 @@ namespace PeakWise.Infrastructure.Configurations
         {
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Message)
-                .IsRequired()
-                .HasMaxLength(450); 
+                .HasColumnType("nvarchar(max)")
+                .IsRequired();
         }
     }
 }

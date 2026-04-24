@@ -3,7 +3,7 @@ using PeakWise.Application.ExternalServices.Services;
 
 namespace PeakWise.API.Hubs
 {
-    public class ChatbotHub(IChatWithGemeniAsChatbot chatWithGemeniAsChatbot) : Hub
+    public class ChatbotHub(ISmartAssistantService chatWithGemeniAsChatbot) : Hub
     {
         public async Task sendmessagetogemeni(string prompt, string userId)
         {

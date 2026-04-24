@@ -129,7 +129,7 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
-builder.Services.AddScoped<IChatWithGemeniAsChatbot, ChatWithGemeniAsChatbot>();
+builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<TokenManager>();
 

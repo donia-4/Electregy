@@ -8,11 +8,11 @@ namespace PeakWise.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ChatbotController : ControllerBase
+    public class SmartAssistantController : ControllerBase
     {
-        private readonly IChatWithGemeniAsChatbot _chatWithGemeniAsChatbot;
+        private readonly ISmartAssistantService _chatWithGemeniAsChatbot;
 
-        public ChatbotController(IChatWithGemeniAsChatbot chatWithGemeniAsChatbot)
+        public SmartAssistantController(ISmartAssistantService chatWithGemeniAsChatbot)
         {
             _chatWithGemeniAsChatbot = chatWithGemeniAsChatbot;
         }
@@ -21,11 +21,19 @@ namespace PeakWise.API.Controllers
         [HttpPost("chatbot")]
         public async Task<IActionResult> Chat([FromBody] string userInput, CancellationToken ct)
         {
-           
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotWithSessionAsync(userInput, userId, ct);
             return Ok(new { Response = response });
         }
-       
+        [Authorize]
+        [HttpPost("recommand")]
+        public async Task<IActionResult> GetRecommandation(CancellationToken ct)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsRecommandationWithSessionAsync(userId, ct);
+            return Ok(new { Response = response });
+
+        }
     }
 }
