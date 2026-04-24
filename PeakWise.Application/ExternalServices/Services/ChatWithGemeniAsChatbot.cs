@@ -7,6 +7,7 @@ using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Entities;
 using PeakWise.Domain.Enums;
 using PeakWise.Infrastructure.Migrations;
+using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -21,31 +22,17 @@ namespace PeakWise.Application.ExternalServices.Services
 {
     public class ChatWithGemeniAsChatbot : IChatWithGemeniAsChatbot
     {
-        private static Queue<string> tokens = new(new[]
-       {
-            "AIzaSyDA_8oCDV-IbQ6N45WwhiwtbPV1fFn4VDw",
-            "AIzaSyCKzNzt2laODA02kI-nfITvYwgdOJ2KN9M",
-            "AIzaSyBpc4iHUUo2kJglj_VzU8QSKx4ZGweXmoI",
-            "AIzaSyC9Aupr04oleAEp2HynBrV3E1R2CGz5k8g",
-            "AIzaSyCzpFMuFg2yuuAoJ3D9oEU1HMi6MhYpB0w",
-            "AIzaSyC-7EWaDnjIvEAGWIjP0GotZNH0fsA6HnU",
-            "AIzaSyBv1GZHyVXX6H3sWnGqpET-anXMtELEOA8",
-            "AIzaSyCQ8HJdG7htDfou4eny2GzG4osrOEeXtFg",
-            "AIzaSyB7S3D-kw_syDfr5RhzsQNDKDAM69KXSo0",
-            "AIzaSyAeqWSr-xYplwPNj-mwPZmBahDJxnIujkQ",
-            "AIzaSyD3jjCneuuX_elOIyvWdlYahfhCbojGoQY",
-        });
+
         private readonly IDeviceService _deviceService;
-        private readonly GoogleAI _googleAI;
-        private readonly GenerativeModel _generativeModel;
+        private readonly TokenManager _tokenManager;
         //private readonly ResponseHandler responseHandler
         private readonly AppDbContext _context;
-        public ChatWithGemeniAsChatbot(IDeviceService deviceService, AppDbContext context)
+        public ChatWithGemeniAsChatbot(IDeviceService deviceService, AppDbContext context, TokenManager tokenManager)
         {
             _context = context;
             _deviceService = deviceService;
-            _googleAI = new GoogleAI(apiKey: tokens.First());
-            _generativeModel = _googleAI.GenerativeModel("gemini-2.5-flash");
+            _tokenManager = tokenManager;
+
         }
 
 
@@ -113,43 +100,21 @@ namespace PeakWise.Application.ExternalServices.Services
                 var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 GenerateContentResponse? response = null;
 
-                foreach (var token in tokens.ToList())
+                var result = await _tokenManager.ExecuteWithRetry(async token =>
                 {
-                    try
-                    {
-                        var googleAI = new GoogleAI(token);
-                        var model = googleAI.GenerativeModel("gemini-2.5-flash");
+                    var googleAI = new GoogleAI(token);
+                    var model = googleAI.GenerativeModel("gemini-2.5-flash");
 
-                        response = await model.GenerateContent(prompt, cancellationToken: cts.Token);
+                    var response = await model.GenerateContent(prompt, cancellationToken: cts.Token);
 
-                        if (response != null)
-                        {
-                            tokens.Dequeue();
-                            tokens.Enqueue(token);
-                            break;
-                        }
-                    }
-                    catch (TaskCanceledException ex)
-                    {
-                        return (HttpStatusCode.InternalServerError, "Check internet connection");
-                    }
-                    catch (OperationCanceledException ex)
-                    {
-                        return (HttpStatusCode.InternalServerError, "You have exceeded your limits");
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        return (HttpStatusCode.InternalServerError, "Check internet connection");
-                    }
-
+                    return response?.Text;
+                });
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    return (HttpStatusCode.BadRequest, "Empty response from Gemini");
                 }
 
-                if (response == null)
-                {
-                    return (HttpStatusCode.BadRequest, "response is null");
-                }
-
-                return (HttpStatusCode.OK, response.Text);
+                return (HttpStatusCode.OK, result);
             }
             catch (Exception ex)
             {
@@ -187,12 +152,18 @@ namespace PeakWise.Application.ExternalServices.Services
                 WriteIndented = true
 
             });
-            var finalPrompt = $"أنت مساعد ذكي لتطبيق مراقبة الكهرباء. \r\nالتعليمات:\r" +
-                $"\n1. أجب فقط عن الكهرباء وتوفير الطاقة.\r" +
-                $"\n2. إذا كان السؤال خارج التخصص رد بـ: 'لايمكنني الرد هذا السؤال خارج محتوي االابليكيشن'.\r" +
-                $"\n3. كن مختصراً جداً.\r" +
-                $"\n4. استخدم بيانات الأجهزة التالية لتقديم نصائح مخصصة:\r\n{devices}\r\n\r" +
-                $"\nسياق المحادثة السابقة:\r\n{userHistory}\r\n\r\nالسؤال الحالي المطلوب الإجابة عليه الآن:\r\n{userInput}";
+            var finalPrompt = $"أنت \"المساعد الذكي لـ Electregy\"،" +
+                $" مستشار الطاقة الرقمي الأول في مصر المتخصص في مساعدة أصحاب الكافيهات، الأنشطة التجارية، والمنازل على إدارة استهلاك الكهرباء. مهمتك هي تحويل بيانات المستخدم إلى قرارات توفير ذكية." +
+                $"نطاق معرفتك (محتوى التطبيق):تنبيهات أوقات الذروة:" +
+                $" توعية المستخدم بأن الفترة من 6 مساءً وحتى 11 مساءً هي الأغلى والأكثر ضغطاً على الشبكة القومية." +
+                $"محاكي السيناريوهات (What-If Simulator): القدرة على اقتراح تغييرات محددة (مثل تقليل ساعات التكييف أو تأجيل الأجهزة الثقيلة) وحساب التوفير المتوقع بالجنيه المصري." +
+                $"لوحة تحكم التوفير: مقارنة الفواتير قبل وبعد استخدام التطبيق وإظهار \"إجمالي التوفير المتراكم\".الأثر القومي والاستدامة:" +
+                $" ربط توفير الطاقة بتقليل انبعاثات الكربون ودعم أهداف التنمية المستدامة (SDGs) لمصر.سهولة الاستخدام: التأكيد على أن التطبيق يعمل بدون أي أجهزة إضافية (No Hardware) وببساطة عبر الموبايل فقط." +
+                $"تعليمات الرد:تحليل البيانات: استخدم قائمة أجهزة المستخدم {devices} لتقديم نصائح رقمية دقيقة (مثلاً: \"جهاز X يستهلك Y، تقليل استخدامه سيوفر لك Z جنيه\")" +
+                $".السياق: ارجع دائماً لـ {userHistory} لضمان استمرارية الحوار وكأنك تتابع معه تطور استهلاكه." +
+                $"القيود: إذا كان سؤال المستخدم {userInput} خارج موضوعات (الكهرباء، الأجهزة، الفواتير، التوفير، أو ميزات Electregy)، رد حصراً بـ: " +
+                $"\"لايمكنني الرد هذا السؤال خارج محتوي االابليكيشن\".طول الرد: اجعل إجابتك \"متوازنة\"؛ ليست كلمة واحدة وليست مقالاً." +
+                $" قدم المعلومة المفيدة بوضوح (3-5 جمل مركزة).الشخصية: تفاعل كزميل خبير، محفز، ومهتم بمساعدة المستخدم على خفض تكاليفه وزيادة أرباحه.لماذا هذا البرومبت أفضل؟";
 
             return finalPrompt;
         }

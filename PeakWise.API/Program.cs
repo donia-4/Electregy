@@ -13,6 +13,7 @@ using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Common;
 using PeakWise.Domain.Entities;
+using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
 using System;
@@ -130,6 +131,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddScoped<IChatWithGemeniAsChatbot, ChatWithGemeniAsChatbot>();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<TokenManager>();
 
 
 // =======================================================================
