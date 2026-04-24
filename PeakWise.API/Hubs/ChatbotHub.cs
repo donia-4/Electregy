@@ -5,10 +5,10 @@ namespace PeakWise.API.Hubs
 {
     public class ChatbotHub(IChatWithGemeniAsChatbot chatWithGemeniAsChatbot) : Hub
     {
-        public async Task sendmessagetogemeni(string prompt,string userId)
+        public async Task sendmessagetogemeni(string prompt, string userId)
         {
-            var response = await chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotAsync(prompt, userId, default);
-            await Clients.All.SendAsync("receivefromchatbot", response);
+            var response = await chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotWithSessionAsync(prompt, userId, default);
+            await Clients.User(userId).SendAsync("receivefromchatbot", response);
         }
     }
 }

@@ -16,6 +16,8 @@ public class AppDbContext : IdentityDbContext<AppUser, Role, string>
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<Recommendation> Recommendations { get; set; }
     public DbSet<PeakPrediction> PeakPredictions { get; set; }
+    public DbSet<ChatSession> ChatMessages { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

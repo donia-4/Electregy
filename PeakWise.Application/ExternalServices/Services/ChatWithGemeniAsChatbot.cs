@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Mscc.GenerativeAI;
 using Mscc.GenerativeAI.Types;
 using PeakWise.Application.Interfaces;
+using PeakWise.Domain.Entities;
 using PeakWise.Domain.Enums;
+using PeakWise.Infrastructure.Migrations;
+using PeakWise.Shared.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +15,13 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ChatSession = PeakWise.Domain.Entities.ChatSession;
 
 namespace PeakWise.Application.ExternalServices.Services
 {
     public class ChatWithGemeniAsChatbot : IChatWithGemeniAsChatbot
     {
-        public static Queue<string> tokens = new(new[]
+        private static Queue<string> tokens = new(new[]
        {
             "AIzaSyDA_8oCDV-IbQ6N45WwhiwtbPV1fFn4VDw",
             "AIzaSyCKzNzt2laODA02kI-nfITvYwgdOJ2KN9M",
@@ -25,72 +30,81 @@ namespace PeakWise.Application.ExternalServices.Services
             "AIzaSyCzpFMuFg2yuuAoJ3D9oEU1HMi6MhYpB0w",
             "AIzaSyC-7EWaDnjIvEAGWIjP0GotZNH0fsA6HnU",
             "AIzaSyBv1GZHyVXX6H3sWnGqpET-anXMtELEOA8",
-            //"AIzaSyD3jjCneuuX_elOIyvWdlYahfhCbojGoQY"
+            "AIzaSyCQ8HJdG7htDfou4eny2GzG4osrOEeXtFg",
+            "AIzaSyB7S3D-kw_syDfr5RhzsQNDKDAM69KXSo0",
+            "AIzaSyAeqWSr-xYplwPNj-mwPZmBahDJxnIujkQ",
+            "AIzaSyD3jjCneuuX_elOIyvWdlYahfhCbojGoQY",
         });
-        //private readonly Gemeni _gemeni;
-        //private readonly List<string> Extensions = [".png", ".jpg", ".jpeg"];
         private readonly IDeviceService _deviceService;
         private readonly GoogleAI _googleAI;
         private readonly GenerativeModel _generativeModel;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private IConfiguration _config;
-        private static ChatSession? _chatSession;
-        public ChatWithGemeniAsChatbot(IWebHostEnvironment webHostEnvironment, IConfiguration config, IDeviceService deviceService)
+        //private readonly ResponseHandler responseHandler
+        private readonly AppDbContext _context;
+        public ChatWithGemeniAsChatbot(IDeviceService deviceService, AppDbContext context)
         {
-            _webHostEnvironment = webHostEnvironment;
+            _context = context;
             _deviceService = deviceService;
             _googleAI = new GoogleAI(apiKey: tokens.First());
-            //  _chatSession= chatSession;
-            _config = config;
             _generativeModel = _googleAI.GenerativeModel("gemini-2.5-flash");
-
         }
-        public async Task<string> ChatWithGemeniAsChatbotAsync(string userInput, string userId="", CancellationToken ct = default)
+
+
+        #region One session for all messages
+        public async Task<string> ChatWithGemeniAsChatbotWithSessionAsync(string userInput, string userId, CancellationToken ct)
         {
-            if(string.IsNullOrEmpty(userInput))
-                return "Please provide a valid input.";
 
-
-            var deviceInfo = await _deviceService.GetUserDevicesAsync(userId, 1, 25, ct);
-            if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
+            try
             {
-                return "No devices found for this user";
+                if (string.IsNullOrEmpty(userInput))
+                    return "Please provide a valid input.";
+                var userMsg = new ChatSession
+                {
+                    UserId = userId,
+                    Message = userInput,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.ChatMessages.Add(userMsg);
+                await _context.SaveChangesAsync(ct);
+
+                var history = await _context.ChatMessages
+                    .Where(x => x.UserId == userId)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Take(20)
+                    .ToListAsync(ct);
+
+                var prompt = await PreparePromptAsync(history, userInput, userId, ct);
+                var response = await TryGenerateContentAsync(prompt);
+
+                if (response.Item1 != HttpStatusCode.OK)
+                    return response.Item2;
+                else
+                {
+
+                    var chatMessage = new ChatSession
+                    {
+                        UserId = userId,
+                        Message = response.Item2,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _context.ChatMessages.AddAsync(chatMessage, ct);
+                    await _context.SaveChangesAsync(ct);
+                    return response.Item2;
+                }
+
             }
-            var items = deviceInfo.Data.Items
-                           .Select(d => new
-                           {
-                               name = d.Name,
-                               type = ((DeviceType)int.Parse(d.Type)).ToString(),
-                               watts = d.Watts,
-                               hoursPerDay = d.HoursPerDay,
-                               estimatedMonthlyCostEGP = d.EstimatedMonthlyCostEGP
-                           }).ToList();
-
-            var devices = JsonSerializer.Serialize(new { items }, new JsonSerializerOptions
+            catch (OperationCanceledException)
             {
-                WriteIndented = true
-            });
-            //return devices;
-            var prompt = $"{userInput} :انت لازم تجاوب في اطار الموضوع غير كدا قول لايمكنني الرد ودا سؤال المستخدم اللي هترد علي اساسه {devices} : انت دلوقتي شات بوت لتطبيق بيتم استخدامه عشان يراقب الكهرباء واستخداماتها مطلوب منك تساعد المستخدم في تساؤالاته عن الاجهزة بتاعته او في توفير الكهربا والتكلفة وتقترح ليه يقلل ايه من الاجهزة وعاوز رد مختصر ومش طويل وعندنا ودلوقتي عندنا مستخدم عنده المواصفات كالأتي";
-            
-
-            var response = await TryGenerateContentAsync(prompt);
-            var res = new
+                return "Request timeout or cancelled";
+            }
+            catch (HttpRequestException ex)
             {
-                Data = response.Item2,
-                StatusCode = 200,
-                message = "Transelation Completed Successfully"
-            };
-
-
-            if (response.Item1 != HttpStatusCode.OK)
-                return "You Have Exceeded Your Limits";
-            else
-                return response.Item2;
-
-
-
-
+                return $"Network error: {ex.Message}";
+            }
+            catch (Exception ex)
+            {
+                return $"Unexpected error: {ex.Message}";
+            }
         }
         private async Task<(HttpStatusCode, string)> TryGenerateContentAsync(string prompt)
         {
@@ -115,10 +129,19 @@ namespace PeakWise.Application.ExternalServices.Services
                             break;
                         }
                     }
-                    catch
+                    catch (TaskCanceledException ex)
                     {
-                        continue;
+                        return (HttpStatusCode.InternalServerError, "Check internet connection");
                     }
+                    catch (OperationCanceledException ex)
+                    {
+                        return (HttpStatusCode.InternalServerError, "You have exceeded your limits");
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        return (HttpStatusCode.InternalServerError, "Check internet connection");
+                    }
+
                 }
 
                 if (response == null)
@@ -126,14 +149,52 @@ namespace PeakWise.Application.ExternalServices.Services
                     return (HttpStatusCode.BadRequest, "response is null");
                 }
 
-                var text = response.Text;
-
-                return (HttpStatusCode.OK, text);
+                return (HttpStatusCode.OK, response.Text);
             }
             catch (Exception ex)
             {
                 return (HttpStatusCode.BadRequest, ex.Message);
             }
+        }
+        #endregion
+
+
+        private async Task<string> PreparePromptAsync(List<ChatSession> history, string userInput, string userId, CancellationToken ct)
+        {
+            var userHistory = new StringBuilder();
+
+            foreach (var msg in history)
+            {
+                userHistory.AppendLine(msg.Message);
+            }
+
+            var deviceInfo = await _deviceService.GetUserDevicesAsync(userId, 1, 25, ct);
+            if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
+            {
+                return "No devices found for this user";
+            }
+            var items = deviceInfo.Data.Items
+                           .Select(d => new
+                           {
+                               name = d.Name,
+                               type = ((DeviceType)int.Parse(d.Type)).ToString(),
+                               watts = d.Watts,
+                               hoursPerDay = d.HoursPerDay,
+                               estimatedMonthlyCostEGP = d.EstimatedMonthlyCostEGP
+                           }).ToList();
+            var devices = JsonSerializer.Serialize(new { items }, new JsonSerializerOptions
+            {
+                WriteIndented = true
+
+            });
+            var finalPrompt = $"أنت مساعد ذكي لتطبيق مراقبة الكهرباء. \r\nالتعليمات:\r" +
+                $"\n1. أجب فقط عن الكهرباء وتوفير الطاقة.\r" +
+                $"\n2. إذا كان السؤال خارج التخصص رد بـ: 'لايمكنني الرد هذا السؤال خارج محتوي االابليكيشن'.\r" +
+                $"\n3. كن مختصراً جداً.\r" +
+                $"\n4. استخدم بيانات الأجهزة التالية لتقديم نصائح مخصصة:\r\n{devices}\r\n\r" +
+                $"\nسياق المحادثة السابقة:\r\n{userHistory}\r\n\r\nالسؤال الحالي المطلوب الإجابة عليه الآن:\r\n{userInput}";
+
+            return finalPrompt;
         }
     }
 }

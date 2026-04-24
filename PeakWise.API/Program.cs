@@ -104,6 +104,19 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"])),
         ClockSkew = TimeSpan.Zero
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var path = context.HttpContext.Request.Path;
+            var token = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) && (path.StartsWithSegments("/chatbot")))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -115,7 +128,7 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
-builder.Services.AddScoped<IChatWithGemeniAsChatbot,ChatWithGemeniAsChatbot>();
+builder.Services.AddScoped<IChatWithGemeniAsChatbot, ChatWithGemeniAsChatbot>();
 builder.Services.AddSignalR();
 
 
@@ -181,7 +194,7 @@ app.UseExceptionHandler();
 app.UseMiddleware<StopwatchRequestMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot");   
+app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot").RequireAuthorization();
 app.MapControllers();
 
 app.Run();
