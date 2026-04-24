@@ -1,0 +1,71 @@
+<div class="login-container">
+  <div class="login-card">
+    
+    <!-- Logo -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#0B1426"/>
+        </svg>
+      </div>
+      <h1 class="brand-name">Electre<span class="highlight">gy</span></h1>
+    </div>
+
+    <h2 class="welcome">Welcome back</h2>
+    <p class="subtitle">Monitor your energy ecosystem in real-time</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
+      <div class="form-group">
+        <label>EMAIL ADDRESS</label>
+        <input 
+          type="email" 
+          formControlName="email" 
+          placeholder="name@companyname.io"
+          class="input-field"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            formControlName="password" 
+            placeholder="••••••••••••"
+            class="input-field"
+          >
+          <button type="button" class="eye-btn" (click)="showPassword = !showPassword">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox">
+          <input type="checkbox" formControlName="remember">
+          <span class="checkmark"></span>
+          Keep me logged in
+        </label>
+        <a href="#" class="forgot">Forgot Access?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loginForm.invalid">
+        Sign In to Electregy
+      </button>
+    </form>
+
+     <div class="signup">
+      New to the network? <a routerLink="/register">Create an account</a>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">Help Center</a>
+  </div>
+</div>
