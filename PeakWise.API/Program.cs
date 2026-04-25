@@ -1,21 +1,24 @@
-using System;
-using System.Text;
-using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PeakWise.Application.DTOs.Auth; 
-using PeakWise.Application.Features; 
+using PeakWise.API.ExceptionHandling;
+using PeakWise.API.Middlewares;
+using PeakWise.Application.DTOs.Auth;
+using PeakWise.Application.ExternalServices.Services;
+using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
-using PeakWise.Domain.Common; 
-using PeakWise.Domain.Entities; 
 using PeakWise.Infrastructure;
+using PeakWise.Domain.Common;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
+using System;
+using System.Text;
+using System.Text.Json.Serialization;
+using PeakWise.Infrastructure.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,7 +103,20 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"])),
-        ClockSkew = TimeSpan.Zero 
+        ClockSkew = TimeSpan.Zero
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var path = context.HttpContext.Request.Path;
+            var token = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) && (path.StartsWithSegments("/chatbot")))
+            {
+                context.Token = token;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -116,16 +132,39 @@ builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddSingleton<MockSimulatorState>();
 builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
+builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<TokenManager>();
 
+
+// =======================================================================
+// 5. Global Exception Handling with ProblemDetails And Custom Middleware
+// =======================================================================
+builder.Services.AddProblemDetails();
+builder.Services.AddTransient<StopwatchRequestMiddleware>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+
+builder.Services.AddCors(opt =>
+{
+    opt.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetIsOriginAllowed(_ => true);
+        });
+});
 // ==========================================
-// 5. FluentValidation Registration
+// 6. FluentValidation Registration
 // ==========================================
 builder.Services.AddValidatorsFromAssemblyContaining<CreateDeviceValidator>();
 
 var app = builder.Build();
 
 // ==========================================
-// 6. Database Seeding 
+// 7. Database Seeding 
 // ==========================================
 using (var scope = app.Services.CreateScope())
 {
@@ -153,12 +192,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
-
+app.UseCors("AllowAll");
+app.UseExceptionHandler();
+app.UseMiddleware<StopwatchRequestMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot").RequireAuthorization();
 app.MapControllers();
 
 app.Run();

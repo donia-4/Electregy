@@ -1,12 +1,13 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PeakWise.Application.DTOs.Auth;
 using PeakWise.Application.Interfaces;
 using PeakWise.Shared.Responses;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PeakWise.API.Controllers
 {
