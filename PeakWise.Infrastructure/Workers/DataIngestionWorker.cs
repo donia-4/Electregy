@@ -28,7 +28,7 @@ namespace PeakWise.Infrastructure.Workers
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
-                    var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>(); // Use your AppDbContext
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>(); // Use your AppDbContext
 
                     // Get all active devices to generate readings for them
                     var activeDevices = await dbContext.Set<Device>().Where(d => d.IsActive).ToListAsync(stoppingToken);
