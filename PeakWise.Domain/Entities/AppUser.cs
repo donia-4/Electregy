@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using PeakWise.Domain.Entities;
 
-public class AppUser : IdentityUser<string>
+public class AppUser : IdentityUser
 {
     public string FullName { get; set; }
 

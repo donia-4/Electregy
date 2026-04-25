@@ -16,11 +16,19 @@ public class AppDbContext : IdentityDbContext<AppUser, Role, string>
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<Recommendation> Recommendations { get; set; }
     public DbSet<PeakPrediction> PeakPredictions { get; set; }
+    public DbSet<ChatSession> ChatMessages { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder
+            .Properties<Enum>()
+            .HaveConversion<string>();
     }
 }

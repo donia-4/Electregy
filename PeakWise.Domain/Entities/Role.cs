@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PeakWise.Domain.Entities
 {
-    public class Role : IdentityRole<string>
+    public class Role : IdentityRole
     {     
     }
 }

@@ -52,7 +52,7 @@ namespace PeakWise.Application.Features.Devices
             }
         }
 
-        public async Task<Response<PaginatedList<DeviceResponse>>> GetUserDevicesAsync(string userId, int pageNumber, int pageSize)
+        public async Task<Response<PaginatedList<DeviceResponse>>> GetUserDevicesAsync(string userId, int pageNumber, int pageSize,CancellationToken token = default)
         {
             try
             {
