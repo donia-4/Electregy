@@ -13,6 +13,7 @@ using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Common; 
 using PeakWise.Domain.Entities; 
+using PeakWise.Infrastructure;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
 
@@ -112,6 +113,9 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
+builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
+builder.Services.AddSingleton<MockSimulatorState>();
+builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
 
 // ==========================================
 // 5. FluentValidation Registration
