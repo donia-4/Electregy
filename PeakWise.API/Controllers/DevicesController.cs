@@ -1,51 +1,81 @@
 ﻿using System.Security.Claims;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PeakWise.Application.DTOs.Devices;
 using PeakWise.Application.Interfaces;
+using PeakWise.Shared.Pagination;
 using PeakWise.Shared.Responses;
 
-[ApiController]
-[Route("api/[controller]")]
-public class DevicesController : ControllerBase
+namespace PeakWise.API.Controllers
 {
-    private readonly IDeviceService _deviceService;
-    private readonly CreateDeviceValidator _validator;
-    private readonly ResponseHandler _responseHandler;
-
-    public DevicesController(
-        IDeviceService deviceService,
-        CreateDeviceValidator validator,
-        ResponseHandler responseHandler)
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize] // All device operations require authentication
+    public class DeviceController : ControllerBase
     {
-        _deviceService = deviceService;
-        _validator = validator;
-        _responseHandler = responseHandler;
-    }
+        private readonly IDeviceService _deviceService;
+        private readonly ResponseHandler _responseHandler;
+        private readonly IValidator<CreateDeviceRequest> _createValidator;
+        private readonly IValidator<UpdateDeviceRequest> _updateValidator;
 
-    [HttpPost]
-    //[Authorize(Roles = "Consumer")]
-    public async Task<ActionResult<Response<DeviceResponse>>> CreateDevice([FromForm] CreateDeviceRequest request, CancellationToken ct)
-    {
-        if (request == null)
+        public DeviceController(
+            IDeviceService deviceService,
+            ResponseHandler responseHandler,
+            IValidator<CreateDeviceRequest> createValidator,
+            IValidator<UpdateDeviceRequest> updateValidator)
         {
-            return StatusCode((int)_responseHandler.BadRequest<object>("Invalid body").StatusCode,
-                _responseHandler.BadRequest<object>("Invalid body"));
+            _deviceService = deviceService;
+            _responseHandler = responseHandler;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
-        var validationResult = await _validator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-        {
-            string errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+        private string GetUserId() => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            return StatusCode((int)_responseHandler.BadRequest<object>(errors).StatusCode,
-                _responseHandler.BadRequest<object>(errors));
+        [HttpPost]
+        public async Task<ActionResult<Response<DeviceResponse>>> Create([FromForm] CreateDeviceRequest request)
+        {
+            ValidationResult validationResult = await _createValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                string errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return StatusCode((int)_responseHandler.BadRequest<object>(errors).StatusCode,
+                    _responseHandler.BadRequest<object>(errors));
+            }
+
+            var response = await _deviceService.CreateDeviceAsync(GetUserId(), request);
+            return StatusCode((int)response.StatusCode, response);
         }
 
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        [HttpGet]
+        public async Task<ActionResult<Response<PaginatedList<DeviceResponse>>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var response = await _deviceService.GetUserDevicesAsync(GetUserId(), pageNumber, pageSize);
+            return StatusCode((int)response.StatusCode, response);
+        }
 
-        var response = await _deviceService.CreateDeviceAsync(userId, request, ct);
+        [HttpPut]
+        public async Task<ActionResult<Response<DeviceResponse>>> Update([FromForm] UpdateDeviceRequest request)
+        {
+            ValidationResult validationResult = await _updateValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                string errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return StatusCode((int)_responseHandler.BadRequest<object>(errors).StatusCode,
+                    _responseHandler.BadRequest<object>(errors));
+            }
 
-        return StatusCode((int)response.StatusCode, response);
+            var response = await _deviceService.UpdateDeviceAsync(GetUserId(), request);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Response<string>>> Delete(int id)
+        {
+            var response = await _deviceService.DeleteDeviceAsync(GetUserId(), id);
+            return StatusCode((int)response.StatusCode, response);
+        }
     }
 }

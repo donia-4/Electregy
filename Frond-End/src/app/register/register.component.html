@@ -1,0 +1,108 @@
+<div class="login-container">
+  <div class="login-card">
+    
+    <!-- Logo -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#0B1426"/>
+        </svg>
+      </div>
+      <h1 class="brand-name">Electre<span class="highlight">gy</span></h1>
+    </div>
+
+    <h2 class="welcome">Create Account</h2>
+    <p class="subtitle">Join the smart energy ecosystem today</p>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Full Name Field (جديد) -->
+      <div class="form-group">
+        <label>FULL NAME</label>
+        <input 
+          type="text" 
+          formControlName="fullName" 
+          placeholder="Tasneem Saeed"
+          class="input-field"
+        >
+        <div class="error-msg" *ngIf="f['fullName'].invalid && f['fullName'].touched">
+          {{ f['fullName'].hasError('required') ? 'Name is required' : '' }}
+        </div>
+      </div>
+
+      <!-- Email Field -->
+      <div class="form-group">
+        <label>EMAIL ADDRESS</label>
+        <input 
+          type="email" 
+          formControlName="email" 
+          placeholder="name@companyname.io"
+          class="input-field"
+        >
+        <div class="error-msg" *ngIf="f['email'].invalid && f['email'].touched">
+          {{ f['email'].hasError('required') ? 'Email is required' : 'Invalid email format' }}
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            formControlName="password" 
+            placeholder="••••••••••••"
+            class="input-field"
+          >
+          <button type="button" class="eye-btn" (click)="showPassword = !showPassword">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <div class="error-msg" *ngIf="f['password'].invalid && f['password'].touched">
+          {{ f['password'].hasError('required') ? 'Password is required' : 'Min 6 characters' }}
+        </div>
+      </div>
+
+      <!-- Confirm Password Field (جديد) -->
+      <div class="form-group">
+        <label>CONFIRM PASSWORD</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'" 
+            formControlName="confirmPassword" 
+            placeholder="••••••••••••"
+            class="input-field"
+          >
+          <button type="button" class="eye-btn" (click)="showConfirmPassword = !showConfirmPassword">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <div class="error-msg" *ngIf="f['confirmPassword'].invalid && f['confirmPassword'].touched">
+          {{ f['confirmPassword'].hasError('required') ? 'Please confirm password' : 'Passwords do not match' }}
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-primary" [disabled]="registerForm.invalid || isLoading">
+        <span *ngIf="!isLoading">Sign Up to Electregy</span>
+        <span *ngIf="isLoading" class="loader-text">Creating Account...</span>
+      </button>
+    </form>
+
+    <div class="signup">
+      Already have an account? <a routerLink="/login">Sign in here</a>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">Help Center</a>
+  </div>
+</div>
