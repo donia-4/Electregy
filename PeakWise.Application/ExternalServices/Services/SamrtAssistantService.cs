@@ -121,7 +121,7 @@ namespace PeakWise.Application.ExternalServices.Services
             var items = deviceInfo.Data.Items.Select(d => new
             {
                 name = d.Name,
-                type = ((DeviceType)int.Parse(d.Type)).ToString(),
+                type = Enum.TryParse<DeviceType>(d.Type, true, out var deviceType) ? deviceType.ToString() : "Unknown",
                 watts = d.Watts,
                 hoursPerDay = d.HoursPerDay,
                 estimatedMonthlyCostEGP = d.EstimatedMonthlyCostEGP
