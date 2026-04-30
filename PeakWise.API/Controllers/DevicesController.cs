@@ -77,5 +77,19 @@ namespace PeakWise.API.Controllers
             var response = await _deviceService.DeleteDeviceAsync(GetUserId(), id);
             return StatusCode((int)response.StatusCode, response);
         }
+
+        [HttpGet("consumption-summary")]
+        public async Task<ActionResult<Response<PaginatedList<DeviceConsumptionSummaryResponse>>>> GetConsumptionSummary([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var response = await _deviceService.GetDevicesConsumptionSummaryAsync(GetUserId(), pageNumber, pageSize);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpGet("{id}/consumption-summary")]
+        public async Task<ActionResult<Response<DeviceConsumptionSummaryResponse>>> GetConsumptionSummaryById(int id)
+        {
+            var response = await _deviceService.GetDeviceConsumptionByIdAsync(GetUserId(), id);
+            return StatusCode((int)response.StatusCode, response);
+        }
     }
 }

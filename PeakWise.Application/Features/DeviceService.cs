@@ -162,6 +162,64 @@ namespace PeakWise.Application.Features.Devices
             }
         }
 
+        public async Task<Response<PaginatedList<DeviceConsumptionSummaryResponse>>> GetDevicesConsumptionSummaryAsync(string userId, int pageNumber, int pageSize)
+        {
+            try
+            {
+                var query = _context.Set<Device>()
+                    .Where(d => d.UserId == userId)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .Select(d => new DeviceConsumptionSummaryResponse
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        DeviceType = d.Type.ToString(),
+                        UsageKW = d.Watts / 1000.0,
+                        TodayHours = d.HoursPerDay,
+                        TodayKwh = (d.Watts * d.HoursPerDay) / 1000.0,
+                        TodayCostEGP = ((d.Watts * d.HoursPerDay) / 1000.0) * TariffRateEGP,
+                        MonthCostEGP = ((d.Watts * d.HoursPerDay * 30) / 1000.0) * TariffRateEGP
+                    });
+
+                var paginatedResult = await PaginatedList<DeviceConsumptionSummaryResponse>.CreateAsync(query, pageNumber, pageSize);
+                return _responseHandler.Success(paginatedResult, "تم جلب ملخص الاستهلاك بنجاح.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error for User: {UserId}", userId);
+                return _responseHandler.InternalServerError<PaginatedList<DeviceConsumptionSummaryResponse>>("حدث خطأ أثناء الحسابات.");
+            }
+        }
+
+        public async Task<Response<DeviceConsumptionSummaryResponse>> GetDeviceConsumptionByIdAsync(string userId, int deviceId)
+        {
+            try
+            {
+                var deviceSummary = await _context.Set<Device>()
+                    .Where(d => d.Id == deviceId && d.UserId == userId)
+                    .Select(d => new DeviceConsumptionSummaryResponse
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        DeviceType = d.Type.ToString(),
+                        UsageKW = d.Watts / 1000.0,
+                        TodayHours = d.HoursPerDay,
+                        TodayKwh = (d.Watts * d.HoursPerDay) / 1000.0,
+                        TodayCostEGP = ((d.Watts * d.HoursPerDay) / 1000.0) * 1.77,
+                        MonthCostEGP = ((d.Watts * d.HoursPerDay * 30) / 1000.0) * 1.77
+                    }).FirstOrDefaultAsync();
+
+                if (deviceSummary == null)
+                    return _responseHandler.NotFound<DeviceConsumptionSummaryResponse>("الجهاز غير موجود.");
+
+                return _responseHandler.Success<DeviceConsumptionSummaryResponse>(deviceSummary, "تم جلب ملخص استهلاك الجهاز بنجاح.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error for device {DeviceId}", deviceId);
+                return _responseHandler.InternalServerError<DeviceConsumptionSummaryResponse>("حدث خطأ فني.");
+            }
+        }
         // Helper Method
         private DeviceResponse MapToResponse(Device device)
         {
