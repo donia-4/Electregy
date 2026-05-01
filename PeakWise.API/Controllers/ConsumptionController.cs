@@ -50,5 +50,7 @@ namespace PeakWise.API.Controllers
             string status = activate ? "ACTIVATED " : "DEACTIVATED ";
             return Ok(new { Message = $"Anomaly simulation is now {status}. Readings will spike!" });
         }
+
+
     }
 }
