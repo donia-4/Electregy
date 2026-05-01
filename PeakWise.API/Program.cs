@@ -19,6 +19,7 @@ using System;
 using System.Text;
 using System.Text.Json.Serialization;
 using PeakWise.Infrastructure.Service;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -133,7 +134,10 @@ builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddSingleton<MockSimulatorState>();
 builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+});
 builder.Services.AddSingleton<TokenManager>();
 
 
