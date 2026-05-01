@@ -11,14 +11,14 @@ using PeakWise.Application.ExternalServices.Services;
 using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
+using PeakWise.Infrastructure;
 using PeakWise.Domain.Common;
-using PeakWise.Domain.Entities;
-using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
 using System;
 using System.Text;
 using System.Text.Json.Serialization;
+using PeakWise.Infrastructure.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,7 +58,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 // 1. Database & Redis Configuration
-var connectionString = builder.Configuration.GetConnectionString("DevCS");
+var connectionString = builder.Configuration.GetConnectionString("ProdCS");
 var redisConnection = builder.Configuration.GetConnectionString("Redis");
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnection));
@@ -129,6 +129,9 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
+builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
+builder.Services.AddSingleton<MockSimulatorState>();
+builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<TokenManager>();
@@ -153,7 +156,6 @@ builder.Services.AddCors(opt =>
             .SetIsOriginAllowed(_ => true);
         });
 });
-
 // ==========================================
 // 6. FluentValidation Registration
 // ==========================================
@@ -185,7 +187,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
