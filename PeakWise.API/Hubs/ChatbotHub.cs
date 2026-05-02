@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using PeakWise.Application.ExternalServices.Services;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using System.Security.Claims;
 
 namespace PeakWise.API.Hubs

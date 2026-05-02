@@ -7,7 +7,6 @@ using Microsoft.OpenApi.Models;
 using PeakWise.API.ExceptionHandling;
 using PeakWise.API.Middlewares;
 using PeakWise.Application.DTOs.Auth;
-using PeakWise.Application.ExternalServices.Services;
 using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
@@ -20,6 +19,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using PeakWise.Infrastructure.Service;
 using Microsoft.AspNetCore.RateLimiting;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
+using PeakWise.Application.ExternalServices.Services.CafeMangment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -139,7 +140,11 @@ builder.Services.AddSignalR(options =>
     options.EnableDetailedErrors = true;
 });
 builder.Services.AddSingleton<TokenManager>();
-
+builder.Services.AddHttpClient<ICafeMangmentService, CafeMangmentService>(client =>
+{
+    client.BaseAddress = new Uri("https://ignoredmember-peakwise.hf.space/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 // =======================================================================
 // 5. Global Exception Handling with ProblemDetails And Custom Middleware

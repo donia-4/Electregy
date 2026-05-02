@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PeakWise.Application.DTOs.SmartAssistant;
-using PeakWise.Application.ExternalServices.Services;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using System.Security.Claims;
 
 namespace PeakWise.API.Controllers
