@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PeakWise.Application.ExternalServices.Services
+namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
 {
     public interface ISmartAssistantService
     {

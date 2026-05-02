@@ -18,7 +18,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChatSession = PeakWise.Domain.Entities.ChatSession;
 
-namespace PeakWise.Application.ExternalServices.Services
+namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
 {
     public class SamrtAssistantService : ISmartAssistantService
     {
