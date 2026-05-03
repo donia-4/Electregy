@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PeakWise.Application.DTOs.Consumption;
@@ -51,6 +52,23 @@ namespace PeakWise.API.Controllers
             return Ok(new { Message = $"Anomaly simulation is now {status}. Readings will spike!" });
         }
 
+        [HttpPost("sync-my-chart")]
+        public IActionResult SyncUserChart()
+        {
+            var userId = GetUserId(); 
+
+            BackgroundJob.Enqueue<IConsumptionService>(service =>
+                service.AggregateUserChartDataAsync(userId));
+
+            return Ok(new { Message = "Your dashboard chart is being generated in the background!" });
+        }
+
+        [HttpGet("chart-data")]
+        public async Task<ActionResult<Response<List<ChartDataResponse>>>> GetChartData()
+        {
+            var response = await _consumptionService.GetUserChartDataAsync(GetUserId()); 
+            return StatusCode((int)response.StatusCode, response);
+        }
 
     }
 }

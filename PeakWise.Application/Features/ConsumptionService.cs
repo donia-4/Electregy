@@ -100,5 +100,92 @@ namespace PeakWise.Application.Features
                 return _responseHandler.InternalServerError<PaginatedList<ReadingResponse>>("An error occurred.");
             }
         }
+
+        public async Task<Response<bool>> AggregateUserChartDataAsync(string userId)
+        {
+            try
+            {
+                _logger.LogInformation("Starting chart data aggregation for user: {UserId}", userId);
+
+                var last24Hours = DateTime.UtcNow.AddHours(-24);
+
+                // جلب القراءات لليوزر ده بس
+                var readings = await _context.Set<Reading>()
+                    .Include(r => r.Device)
+                    .Where(r => r.Device.UserId == userId && r.Timestamp >= last24Hours)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                if (!readings.Any())
+                {
+                    return _responseHandler.Success(true, "No readings found for the last 24 hours.");
+                }
+
+                // تقسيم الداتا لمجموعات لكل ساعة (Logic التجميع)
+                var hourlyData = readings
+                    .GroupBy(r => new { r.Timestamp.Date, r.Timestamp.Hour })
+                    .Select(g => new DailyConsumption
+                    {
+                        UserId = userId,
+                        Date = g.Key.Date.AddHours(g.Key.Hour),
+                        TotalKwh = Math.Round((g.Sum(r => r.WattsConsumed) * 5.0) / (3600.0 * 1000.0), 4),
+                        TotalCost = Math.Round(((g.Sum(r => r.WattsConsumed) * 5.0) / (3600.0 * 1000.0)) * TariffRateEGP, 2)
+                    }).ToList();
+
+                // تنظيف البيانات القديمة لنفس الفترة واليوزر
+                var existing = _context.Set<DailyConsumption>()
+                    .Where(d => d.UserId == userId && d.Date >= last24Hours);
+
+                _context.RemoveRange(existing);
+
+                // إضافة البيانات الجديدة
+                await _context.Set<DailyConsumption>().AddRangeAsync(hourlyData);
+                await _context.SaveChangesAsync();
+
+                return _responseHandler.Success(true, "Chart data aggregated successfully.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error aggregating chart data for user: {UserId}", userId);
+                return _responseHandler.InternalServerError<bool>("An error occurred while processing chart data.");
+            }
+        }
+        public async Task<Response<List<ChartDataResponse>>> GetUserChartDataAsync(string userId)
+        {
+            try
+            {
+                var last24Hours = DateTime.UtcNow.AddHours(-24);
+                var data = await _context.Set<DailyConsumption>()
+                    .Where(d => d.UserId == userId && d.Date >= last24Hours)
+                    .OrderBy(d => d.Date)
+                    .Select(d => new ChartDataResponse
+                    {
+                        Time = d.Date.ToString("HH:mm"),
+                        Usage = d.TotalKwh,
+                        Cost = d.TotalCost
+                    }).ToListAsync();
+
+                return _responseHandler.Success(data, "Chart data retrieved.");
+            }
+            catch (Exception ex)
+            {
+                return _responseHandler.InternalServerError<List<ChartDataResponse>>("Error fetching chart.");
+            }
+        }
+
+        public async Task AggregateAllUsersChartDataAsync()
+        {
+            // هنجيب كل اليوزرز اللي ليهم أجهزة في السيستم
+            var userIds = await _context.Set<Device>()
+                .Select(d => d.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var userId in userIds)
+            {
+                await AggregateUserChartDataAsync(userId);
+            }
+        }
     }
+
 }
