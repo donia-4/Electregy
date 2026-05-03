@@ -10,6 +10,7 @@ public class AppDbContext : IdentityDbContext<AppUser, Role, string>
     {
     }
 
+    public DbSet<DailyConsumption> DailyConsumptions { get; set; }
     public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
     public DbSet<Device> Devices { get; set; }
     public DbSet<Reading> Readings { get; set; }
