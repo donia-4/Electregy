@@ -1,26 +1,27 @@
+using System;
+using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PeakWise.API.ExceptionHandling;
 using PeakWise.API.Middlewares;
 using PeakWise.Application.DTOs.Auth;
+using PeakWise.Application.ExternalServices.Services.CafeMangment;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
-using PeakWise.Infrastructure;
 using PeakWise.Domain.Common;
+using PeakWise.Infrastructure;
+using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
-using System;
-using System.Text;
-using System.Text.Json.Serialization;
-using PeakWise.Infrastructure.Service;
-using Microsoft.AspNetCore.RateLimiting;
-using PeakWise.Application.ExternalServices.Services.SmartAssistant;
-using PeakWise.Application.ExternalServices.Services.CafeMangment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,7 +61,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 // 1. Database & Redis Configuration
-var connectionString = builder.Configuration.GetConnectionString("ProdCS");
+var connectionString = builder.Configuration.GetConnectionString("DevCS");
 var redisConnection = builder.Configuration.GetConnectionString("Redis");
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnection));
@@ -170,6 +171,14 @@ builder.Services.AddCors(opt =>
 // ==========================================
 builder.Services.AddValidatorsFromAssemblyContaining<CreateDeviceValidator>();
 
+// Hangfire Configuration
+builder.Services.AddHangfire(config => config
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("ProdCS")));
+
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 // ==========================================
@@ -205,9 +214,18 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseExceptionHandler();
 app.UseMiddleware<StopwatchRequestMiddleware>();
+app.UseHangfireDashboard();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot").RequireAuthorization();
+using (var scope = app.Services.CreateScope())
+{
+    // Recurring Job Registration
+    RecurringJob.AddOrUpdate<IConsumptionService>(
+        "refresh-all-charts",
+        service => service.AggregateAllUsersChartDataAsync(),
+        Cron.Hourly);
+}
 app.MapControllers();
 
 app.Run();
