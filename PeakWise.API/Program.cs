@@ -135,6 +135,7 @@ builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddSingleton<MockSimulatorState>();
 builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
+
 builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true;
@@ -208,6 +209,7 @@ app.UseMiddleware<StopwatchRequestMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot").RequireAuthorization();
+app.MapHub<PeakWise.API.Hubs.ConsumptionHub>("/consumption").RequireAuthorization();
 app.MapControllers();
 
 app.Run();

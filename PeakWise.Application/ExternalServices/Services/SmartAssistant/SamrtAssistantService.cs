@@ -113,18 +113,20 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
 
         private async Task<string> GetDevicesJsonAsync(string userId, CancellationToken ct)
         {
-            var deviceInfo = await _deviceService.GetUserDevicesAsync(userId, 1, 25, ct);
+            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, 25);
 
             if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
                 return null;
 
             var items = deviceInfo.Data.Items.Select(d => new
             {
-                name = d.Name,
-                type = Enum.TryParse<DeviceType>(d.Type, true, out var deviceType) ? deviceType.ToString() : "Unknown",
-                watts = d.Watts,
-                hoursPerDay = d.HoursPerDay,
-                estimatedMonthlyCostEGP = d.EstimatedMonthlyCostEGP
+                DeviceType = Enum.TryParse<DeviceType>(d.DeviceType, true, out var deviceType) ? deviceType.ToString() : "Unknown",
+                d.UsageKW,
+                d.MonthCostEGP,
+                d.TodayCostEGP,
+                d.TodayHours,
+                d.Name,
+                d.TodayKwh
             });
 
             return JsonSerializer.Serialize(new { items }, new JsonSerializerOptions
@@ -153,7 +155,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _context.ChatMessages.Add(userMsg);
+                await _context.ChatMessages.AddAsync(userMsg);
                 await _context.SaveChangesAsync(ct);
 
                 var chatHistory = await _context.ChatMessages
@@ -169,7 +171,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                      $"محادثاتناالسابقة: {history}" +
                          "تعليمات: -لو السؤال عن الكهرباء أو التوفير → جاوب" +
                          "- لو خارج الموضوع تمامًا → ارفض" +
-                         "- اجعل الإجابة 3 - 5 جمل واضحة";
+                         "- اجعل الإجابة 4 - 7 جمل واضحة";
             }
             else
             {
@@ -179,7 +181,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                         "التعليمات:- حدد أعلى الأجهزة استهلاكاً- راقب استهلاكها في ساعات الذروة (6-11 مساءً)" +
                         "- اذكر توفير تقريبي بالجنيه المصري القواعد:- لا تسأل المستخدم أي أسئلة - لا تذكر أنك AI" +
                         "- استخدم البيانات فقط - لو لا توجد بيانات كافية قل: لا توجد بيانات كافية للتحليل الرد:" +
-                        "3-5 جمل باللهجة المصرية، تحليل + توصية + توفير.";
+                        "4-7 جمل باللهجة المصرية، تحليل + توصية + توفير.";
             }
             throw new ArgumentException("Invalid prompt type");
         }
