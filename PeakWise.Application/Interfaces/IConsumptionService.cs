@@ -13,5 +13,8 @@ namespace PeakWise.Application.Interfaces
     {
         Task<Response<ConsumptionSummaryResponse>> GetUserSummaryAsync(string userId);
         Task<Response<PaginatedList<ReadingResponse>>> GetDeviceReadingsAsync(string userId, int deviceId, int pageNumber, int pageSize);
+        Task<Response<bool>> AggregateUserChartDataAsync(string userId);
+        Task<Response<List<ChartDataResponse>>> GetUserChartDataAsync(string userId);
+        Task AggregateAllUsersChartDataAsync();
     }
 }
