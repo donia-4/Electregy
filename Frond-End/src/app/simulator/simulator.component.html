@@ -1,0 +1,168 @@
+<div class="simulator-container">
+  
+  <!-- Header Stats -->
+  <div class="stats-banner">
+    <div class="stat-main">
+      <span class="label">TOTAL POTENTIAL SAVINGS</span>
+      <h2>{{ result?.total_Savings_Kwh | number:'1.3-3' }} <small>kWh</small></h2>
+      <p>Monthly Projection</p>
+    </div>
+    
+    <div class="efficiency-box" *ngIf="result">
+      <span>Efficiency Rating</span>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" [style.width.%]="result.saving_Percentage"></div>
+      </div>
+      <span class="percent">{{ result.saving_Percentage | number:'1.2-2' }}%</span>
+    </div>
+  </div>
+
+  <!-- Main Results Grid -->
+  <div class="results-grid" *ngIf="result">
+    <div class="result-card">
+      <span class="r-label">Baseline Energy</span>
+      <div class="r-value">{{ result.total_Baseline_Energy | number:'1.2-2' }} <small>kWh</small></div>
+    </div>
+    <div class="result-card">
+      <span class="r-label">Optimized Energy</span>
+      <div class="r-value optimized">{{ result.total_Optimized_Energy | number:'1.2-2' }} <small>kWh</small></div>
+    </div>
+    <div class="result-card highlight">
+      <span class="r-label">Total Savings</span>
+      <div class="r-value">{{ result.total_Savings_Kwh | number:'1.3-3' }} <small>kWh</small></div>
+    </div>
+  </div>
+
+  <!-- Main Control Card -->
+  <div class="control-card">
+    <div class="card-header">
+      <div class="device-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><path d="M9 9h6v6H9z"></path><path d="M9 1v3"></path><path d="M15 1v3"></path><path d="M9 20v3"></path><path d="M15 20v3"></path><path d="M20 9h3"></path><path d="M20 14h3"></path><path d="M1 9h3"></path><path d="M1 14h3"></path></svg>
+      </div>
+      <div>
+        <h3>Main Grid Controller</h3>
+        <span class="status" [class.loading]="loading">{{ loading ? 'Simulating...' : 'Active • Ready' }}</span>
+      </div>
+    </div>
+
+    <div class="sliders-grid">
+      <div class="slider-group">
+        <div class="slider-header"><label>Temperature</label><span class="value">{{ temp | number:'1.1-1' }}°C</span></div>
+        <input type="range" min="18" max="30" step="0.1" [(ngModel)]="temp" class="custom-range">
+      </div>
+      <div class="slider-group">
+        <div class="slider-header"><label>Occupancy</label><span class="value">{{ occupancy | number:'1.0-0' }}%</span></div>
+        <input type="range" min="0" max="100" step="1" [(ngModel)]="occupancy" class="custom-range">
+      </div>
+      <div class="slider-group">
+        <div class="slider-header"><label>Orders Load</label><span class="value">{{ orders | number:'1.0-0' }}</span></div>
+        <input type="range" min="0" max="100" step="1" [(ngModel)]="orders" class="custom-range">
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <div class="toggle-group">
+        <label>Is Weekend?</label>
+        <button class="toggle-btn" [class.active]="isWeekend" (click)="isWeekend = !isWeekend">
+          {{ isWeekend ? 'ON' : 'OFF' }}
+        </button>
+      </div>
+      <div class="select-group">
+        <label>Time Period</label>
+        <select [(ngModel)]="selectedPeriod">
+          <option *ngFor="let p of periods" [value]="p.value">{{ p.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-simulate" (click)="simulate()" [disabled]="loading">
+      <span *ngIf="!loading">Run Simulation</span>
+      <span *ngIf="loading">Calculating...</span>
+    </button>
+  </div>
+
+  <div class="best-opt-card" *ngIf="planResult">
+    <div class="opt-icon">
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="12" fill="#98CBFF" fill-opacity="0.2"/>
+        <path d="M31 21L29.75 18.25L27 17L29.75 15.75L31 13L32.25 15.75L35 17L32.25 18.25L31 21ZM31 35L29.75 32.25L27 31L29.75 29.75L31 27L32.25 29.75L35 31L32.25 32.25L31 35ZM21 32L18.5 26.5L13 24L18.5 21.5L21 16L23.5 21.5L29 24L23.5 26.5L21 32ZM21 27.15L22 25L24.15 24L22 23L21 20.85L20 23L17.85 24L20 25L21 27.15Z" fill="#98CBFF"/>
+      </svg>
+    </div>
+    <div class="opt-content">
+      <h4>Recommended Strategy</h4>
+      <p class="strategy-name">{{ planResult.best_Action }}</p>
+      <div class="saving-badge">
+        Expected Saving: <strong>{{ planResult.best_Savings | number:'1.3-3' }} kWh</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Other Scenarios List (Cleaner Look) -->
+  <div class="scenarios-section" *ngIf="planResult">
+    <h5>Alternative Scenarios</h5>
+    <div class="scenario-item" *ngFor="let s of planResult.scenarios">
+      <div class="scenario-details">
+        <span class="action-name">{{ s.action }}</span>
+        <span class="energy-info">{{ s.expected_Energy | number:'1.2-2' }} kWh</span>
+      </div>
+      <div class="scenario-saving">
+        <span class="label">Saving:</span>
+        <span class="val" [class.best-val]="s.action === planResult.best_Action">
+          {{ s.savings | number:'1.3-3' }} kWh
+        </span>
+      </div>
+    </div>
+  </div>
+
+
+   <div class="actions-panel" *ngIf="actionsResult">
+    <div class="panel-header">
+      <h5>Smart Control Actions</h5>
+      <span class="badge-live">Live Simulation</span>
+    </div>
+    
+    <div class="actions-grid">
+      
+      <!-- AC Level -->
+      <div class="action-card-mini">
+        <div class="info">
+          <span class="label">AC Level</span>
+          <strong>{{ actionsResult.ac_Level }}°C</strong>
+        </div>
+      </div>
+
+      <!-- AC Mode -->
+      <div class="action-card-mini">
+        <div class="info">
+          <span class="label">AC Mode</span>
+          <strong>{{ actionsResult.ac_Mode }}</strong>
+        </div>
+      </div>
+
+      <!-- Coffee Machines -->
+      <div class="action-card-mini">
+        <div class="info">
+          <span class="label">Coffee Machines</span>
+          <strong>{{ actionsResult.coffee_Machines }}</strong>
+        </div>
+      </div>
+
+      <!-- Staff Prep -->
+      <div class="action-card-mini">
+        <div class="info">
+          <span class="label">Staff Prep</span>
+          <strong>{{ actionsResult.staff_Preparation }}</strong>
+        </div>
+      </div>
+
+      <!-- Load Distribution -->
+      <div class="action-card-mini full-width">
+        <div class="info">
+          <span class="label">Load Distribution</span>
+          <strong>{{ actionsResult.load_Distribution }}</strong>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

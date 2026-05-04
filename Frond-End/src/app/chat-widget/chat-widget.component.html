@@ -1,0 +1,119 @@
+<!-- Floating Button -->
+<button class="chat-trigger" (click)="toggleChat()" *ngIf="!isFullscreen">
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_25_5221)">
+<rect x="4" y="4" width="56" height="56" rx="16" fill="#00A3FF" shape-rendering="crispEdges"/>
+<path d="M27.6203 21.058C28.4975 18.4909 32.0446 18.4131 33.0847 20.8248L33.1727 21.0595L34.3565 24.5215C34.6278 25.3155 35.0662 26.042 35.6422 26.6521C36.2181 27.2623 36.9183 27.7418 37.6953 28.0583L38.0136 28.1771L41.4756 29.3595C44.0428 30.2367 44.1205 33.7838 41.7103 34.8239L41.4756 34.9119L38.0136 36.0957C37.2194 36.3668 36.4925 36.8052 35.8822 37.3811C35.2718 37.9571 34.792 38.6573 34.4753 39.4345L34.3565 39.7514L33.1742 43.2148C32.2969 45.782 28.7498 45.8597 27.7112 43.4495L27.6203 43.2148L26.4379 39.7528C26.1668 38.9586 25.7285 38.2318 25.1525 37.6214C24.5765 37.011 23.8763 36.5312 23.0992 36.2145L22.7823 36.0957L19.3203 34.9134C16.7517 34.0361 16.6739 30.489 19.0856 29.4504L19.3203 29.3595L22.7823 28.1771C23.5763 27.9058 24.3028 27.4674 24.9129 26.8915C25.523 26.3155 26.0026 25.6154 26.3191 24.8384L26.4379 24.5215L27.6203 21.058ZM30.3972 22.0057L29.2149 25.4677C28.8018 26.6784 28.1297 27.7844 27.2455 28.7089C26.3614 29.6334 25.2863 30.354 24.0952 30.8206L23.7285 30.9541L20.2665 32.1364L23.7285 33.3188C24.9392 33.7319 26.0452 34.4039 26.9697 35.2881C27.8941 36.1723 28.6148 37.2473 29.0814 38.4384L29.2149 38.8052L30.3972 42.2672L31.5796 38.8052C31.9927 37.5945 32.6647 36.4884 33.5489 35.564C34.4331 34.6395 35.5081 33.9189 36.6992 33.4523L37.066 33.3203L40.528 32.1364L37.066 30.9541C35.8553 30.541 34.7492 29.8689 33.8247 28.9847C32.9003 28.1006 32.1797 27.0255 31.7131 25.8344L31.581 25.4677L30.3972 22.0057ZM42.1328 16C42.4072 16 42.6762 16.077 42.909 16.2222C43.1419 16.3674 43.3294 16.575 43.4501 16.8215L43.5205 16.9931L44.034 18.4982L45.5405 19.0116C45.8155 19.1051 46.0566 19.2781 46.2333 19.5087C46.4099 19.7393 46.514 20.0171 46.5326 20.307C46.5511 20.5969 46.4832 20.8857 46.3374 21.1369C46.1916 21.3882 45.9745 21.5904 45.7136 21.7182L45.5405 21.7886L44.0354 22.302L43.522 23.8086C43.4284 24.0835 43.2553 24.3245 43.0246 24.501C42.7939 24.6774 42.516 24.7814 42.2262 24.7998C41.9363 24.8182 41.6475 24.7501 41.3964 24.6042C41.1452 24.4583 40.9431 24.2411 40.8155 23.9802L40.7451 23.8086L40.2316 22.3035L38.7251 21.79C38.4501 21.6966 38.209 21.5236 38.0323 21.293C37.8557 21.0624 37.7516 20.7846 37.733 20.4947C37.7145 20.2048 37.7824 19.916 37.9282 19.6647C38.074 19.4135 38.2911 19.2112 38.552 19.0835L38.7251 19.0131L40.2302 18.4997L40.7436 16.9931C40.8425 16.7033 41.0297 16.4517 41.2788 16.2736C41.5279 16.0955 41.8266 15.9998 42.1328 16Z" fill="#0B1F3A"/>
+</g>
+<defs>
+<filter id="filter0_d_25_5221" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.639216 0 0 0 0 1 0 0 0 0.4 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_25_5221"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_25_5221" result="shape"/>
+</filter>
+</defs>
+</svg>
+
+</button>
+
+
+
+<!-- Mini Chat Window -->
+<div class="mini-chat" *ngIf="isOpen && !isFullscreen">
+  <div class="chat-header">
+     <div class="logo-area">
+      <div class="status-dot"></div>
+      <div>
+        <h5>Electregy AI</h5>
+        <span class="status-text">Online</span>
+      </div>
+    </div>
+    <button class="expand-btn" (click)="openFullscreen()">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+    </button>
+  </div>
+  
+  <div class="chat-body" #chatBodyMini>
+    <div *ngFor="let msg of messages" 
+         class="message-bubble" 
+         [class.user]="msg.sender === 'user'" 
+         [class.bot]="msg.sender === 'bot'">
+      {{ msg.text }}
+    </div>
+
+    <!-- Loading Indicator for Mini Chat -->
+    <div *ngIf="isBotTyping" class="message-bubble bot typing-indicator">
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-footer">
+     <input [(ngModel)]="userInput" 
+           (keydown.enter)="send()" 
+           placeholder="Type a command...">
+    <button class="send-btn-mini" (click)="send()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Full Screen Chat Modal -->
+<div class="fullscreen-chat-overlay" *ngIf="isFullscreen">
+  <div class="fullscreen-chat-container">
+    
+    <div class="fs-header">
+       <div class="navbar-logo">
+        <div class="logo-icon-bg">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="#fff"/></svg>
+        </div>
+        <span class="brand-name">Electre<span class="highlight">gy</span></span>
+      </div>
+      <button class="close-btn" (click)="closeFullscreen()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="fs-body">
+      <div class="fs-main full-width" #chatBodyFull>
+        <div *ngFor="let msg of messages" 
+             class="message-row" 
+             [class.user-row]="msg.sender === 'user'" 
+             [class.bot-row]="msg.sender === 'bot'">
+             
+             <div class="message-bubble large">
+               <p>{{ msg.text }}</p>
+               <span class="sender-label">{{ msg.sender === 'user' ? 'YOU' : 'ELECTREGY AI' }}</span>
+             </div>
+        </div>
+
+        <!-- Loading Indicator for Fullscreen Chat -->
+        <div *ngIf="isBotTyping" class="message-row bot-row">
+           <div class="message-bubble large typing-indicator">
+              <div class="typing-dots">
+                <span></span><span></span><span></span>
+              </div>
+           </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="fs-footer">
+       <div class="input-wrapper">
+        <input [(ngModel)]="userInput" 
+               (keydown.enter)="send()" 
+               placeholder="Message Electregy AI...">
+        <button class="send-btn-full" (click)="send()">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

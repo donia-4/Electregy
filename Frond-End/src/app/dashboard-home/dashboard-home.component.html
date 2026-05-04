@@ -1,0 +1,115 @@
+<div class="dashboard-container">
+  <div class="alert-box" *ngIf="activeAlert">
+    <div class="alert-content">
+      <div class="alert-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="alert-text-wrapper">
+        <h4>{{ activeAlert.deviceName }} Alert</h4>
+        <p>{{ activeAlert.message }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards Grid -->
+  <div class="cards-grid" *ngIf="!loadingSummary && summary; else loadingState">
+
+    <!-- Card 1: Today's Usage -->
+    <div class="card">
+      <div class="card-header">
+        <span>TODAY'S USAGE</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+          <polyline points="17 6 23 6 23 12"></polyline>
+        </svg>
+      </div>
+      <div class="card-value">
+        {{ summary.todayKwh | number:'1.2-2' }}
+        <small>kWh</small>
+      </div>
+      <div class="card-trend positive">
+        {{ summary.todayCostEGP | number:'1.2-2' }} EGP
+      </div>
+    </div>
+
+    <!-- Card 2: Monthly Cost -->
+    <div class="card">
+      <div class="card-header">
+        <span>MONTHLY COST</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
+        </svg>
+      </div>
+      <div class="card-value">
+        {{ summary.monthCostEGP | number:'1.2-2' }}
+        <small>EGP</small>
+      </div>
+      <div class="card-subtext">Bill projected</div>
+    </div>
+
+    <!-- Card 3: AI Insight -->
+    <div class="card highlight-card">
+      <div class="card-header">
+        <span>AI INSIGHT</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+          <path d="M12 12L2.1 12.1"></path>
+        </svg>
+      </div>
+
+      <p class="ai-text" *ngIf="aiMessage; else noInsight">
+        {{ aiMessage }}
+      </p>
+
+      <ng-template #noInsight>
+        <p class="ai-text">جاري تحليل البيانات...</p>
+      </ng-template>
+    </div>
+
+  </div>
+
+  <!-- Loading State Template -->
+  <ng-template #loadingState>
+    <div class="cards-grid">
+      <div class="card skeleton-card"></div>
+      <div class="card skeleton-card"></div>
+      <div class="card skeleton-card"></div>
+    </div>
+  </ng-template>
+
+  <!-- Chart Section -->
+  <div class="chart-box">
+    <div class="chart-header">
+      <div>
+        <h4>Daily Electricity Usage</h4>
+        <p>Real-time tracking of grid consumption (kW)</p>
+      </div>
+      <div class="chart-actions">
+        <button (click)="updateChartWithRealData()" [disabled]="isChartLoading"
+          class="btn-sync">
+          {{ isChartLoading ? 'Processing...' : 'Sync Live Data' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="chart-wrapper">
+      <div *ngIf="isChartLoading" class="chart-loading-overlay">
+        <div class="spinner"></div>
+        <p>Analyzing last 24 hours...</p>
+      </div>
+      <canvas #chartCanvas></canvas>
+    </div>
+  </div>
+
+</div>
