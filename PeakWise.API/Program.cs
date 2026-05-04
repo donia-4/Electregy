@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PeakWise.API.ExceptionHandling;
 using PeakWise.API.Middlewares;
+using PeakWise.Application;
 using PeakWise.Application.DTOs.Auth;
 using PeakWise.Application.ExternalServices.Services.CafeMangment;
 using PeakWise.Application.ExternalServices.Services.SmartAssistant;
@@ -114,7 +115,7 @@ builder.Services.AddAuthentication(options =>
         {
             var path = context.HttpContext.Request.Path;
             var token = context.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(token) && (path.StartsWithSegments("/chatbot")))
+            if (!string.IsNullOrEmpty(token) && ((path.StartsWithSegments("/chatbot")|| path.StartsWithSegments("/consumption"))))
             {
                 context.Token = token;
             }
@@ -134,7 +135,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
 builder.Services.AddSingleton<MockSimulatorState>();
-builder.Services.AddHostedService<PeakWise.Infrastructure.Workers.DataIngestionWorker>();
+builder.Services.AddHostedService<PeakWise.Application.Workers.DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
 
 builder.Services.AddSignalR(options =>

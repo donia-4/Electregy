@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
+using PeakWise.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using PeakWise.Domain.Common;
 using System.Threading.Tasks;
 
 namespace PeakWise.Infrastructure.Service
@@ -11,7 +10,6 @@ namespace PeakWise.Infrastructure.Service
     public class TokenManager
     {
         private readonly List<ApiToken> _tokens;
-        private int _index = -1;
         private readonly object _lock = new();
 
         public TokenManager(IConfiguration config)
@@ -23,79 +21,104 @@ namespace PeakWise.Infrastructure.Service
                     Value = t
                 })
                 .ToList();
+
+            if (!_tokens.Any())
+                throw new Exception("No tokens configured.");
         }
 
-        public ApiToken GetToken()
+        private ApiToken GetToken(HashSet<string> triedTokens)
         {
             lock (_lock)
             {
-                for (int i = 0; i < _tokens.Count; i++)
-                {
-                    _index = (_index + 1) % _tokens.Count;
+                var now = DateTime.UtcNow;
 
-                    var token = _tokens[_index];
+                var token = _tokens
+                    .Where(t =>
+                        !t.IsPermanentlyDisabled &&
+                        (t.DisabledUntil == null || t.DisabledUntil <= now) &&
+                        !triedTokens.Contains(t.Value))
+                    .OrderBy(t => t.LastUsed)
+                    .FirstOrDefault();
 
-                    if (!token.IsActive)
-                        continue;
+                if (token == null)
+                    throw new Exception("No available tokens (all cooling down or failed).");
 
-                    token.LastUsed = DateTime.UtcNow;
-                    return token;
-                }
-
-                throw new Exception("No active tokens available");
+                token.LastUsed = now;
+                return token;
             }
         }
 
-        public void MarkFailed(string tokenValue)
+        private void MarkFailed(ApiToken token, Exception ex)
         {
             lock (_lock)
             {
-                var token = _tokens.FirstOrDefault(x => x.Value == tokenValue);
-                if (token == null) return;
-
                 token.FailCount++;
 
-                if (token.FailCount >= 3)
+                if (ex.Message.Contains("403") || ex.Message.Contains("PERMISSION_DENIED"))
                 {
-                    token.IsActive = false;
+                    token.IsPermanentlyDisabled = true;
+                    return;
                 }
+
+                if (ex.Message.Contains("429"))
+                {
+                    token.DisabledUntil = DateTime.UtcNow.AddSeconds(30);
+                    return;
+                }
+
+                var backoffSeconds = Math.Min(60, Math.Pow(2, token.FailCount));
+                token.DisabledUntil = DateTime.UtcNow.AddSeconds(backoffSeconds);
             }
         }
 
-        public void MarkSuccess(string tokenValue)
+        private void MarkSuccess(ApiToken token)
         {
-            var token = _tokens.FirstOrDefault(x => x.Value == tokenValue);
-            if (token == null) return;
-
-            token.FailCount = 0;
+            lock (_lock)
+            {
+                token.FailCount = 0;
+                token.DisabledUntil = null;
+            }
         }
 
         public async Task<T?> ExecuteWithRetry<T>(Func<string, Task<T>> action)
         {
+            var triedTokens = new HashSet<string>();
             Exception? lastException = null;
 
             for (int i = 0; i < _tokens.Count; i++)
             {
-                var token = GetToken();
+                ApiToken token;
+
+                try
+                {
+                    token = GetToken(triedTokens);
+                    triedTokens.Add(token.Value);
+                }
+                catch (Exception ex)
+                {
+                    throw lastException ?? ex;
+                }
 
                 try
                 {
                     var result = await action(token.Value);
-                    MarkSuccess(token.Value);
+
+                    MarkSuccess(token);
                     return result;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    MarkFailed(token.Value);
+                    MarkFailed(token, ex);
                     lastException = ex;
 
-                    Console.WriteLine($"Token failed: {ex.Message}");
-                    Console.WriteLine(ex.Message);
-                    throw;
+                    Console.WriteLine($"Token failed: {token.Value}");
+                    Console.WriteLine($"Reason: {ex.Message}");
+
+                    continue;
                 }
             }
 
-            throw lastException ?? new Exception("All tokens failed");
+            throw lastException ?? new Exception("All tokens failed.");
         }
     }
 }

@@ -2,6 +2,7 @@
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PeakWise.Application;
 using PeakWise.Application.DTOs.Consumption;
 using PeakWise.Application.Interfaces;
 using PeakWise.Infrastructure;

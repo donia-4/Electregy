@@ -113,7 +113,8 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
 
         private async Task<string> GetDevicesJsonAsync(string userId, CancellationToken ct)
         {
-            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, 25);
+            var devicesCount = await _context.Devices.CountAsync();
+            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, devicesCount );
 
             if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
                 return null;
@@ -161,17 +162,17 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                 var chatHistory = await _context.ChatMessages
                     .Where(x => x.UserId == userId)
                     .OrderByDescending(x => x.CreatedAt)
-                    .Take(10)
+                    .Take(5)
                     .ToListAsync(ct);
                 var history = BuildHistory(chatHistory);
 
                 return $"أنت مساعد ذكي لتطبيق Electregy.مهمتك:- مساعدة المستخدم في تقليل استهلاك الكهرباء" +
-                         "- تحليل أجهزته وتقديم نصائح" +
+                         "- تحليل أجهزته ولازم تجاوب بالنسبة للمدخلات بتاعته" +
                          $"بيانات الأجهزة: {devices} سؤال المستخدم: {userInput}" +
-                     $"محادثاتناالسابقة: {history}" +
+                        $"محادثاتناالسابقة: {history}" +
                          "تعليمات: -لو السؤال عن الكهرباء أو التوفير → جاوب" +
                          "- لو خارج الموضوع تمامًا → ارفض" +
-                         "- اجعل الإجابة 4 - 7 جمل واضحة";
+                         "- اجعل الإجابة 4 - 7 جمل واضحة ";
             }
             else
             {
@@ -191,13 +192,14 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
         {
             try
             {
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(75));
                 GenerateContentResponse? response = null;
                 //Console.WriteLine(prompt.Length);
                 var result = await _tokenManager.ExecuteWithRetry(async token =>
                 {
                     var googleAI = new GoogleAI(token);
-                    var model = googleAI.GenerativeModel("gemini-2.5-flash");
+                    //var model = googleAI.GenerativeModel("gemini-2.5-flash");
+                    var model = googleAI.GenerativeModel("gemini-flash-lite-latest");
 
                     var response = await model.GenerateContent(prompt, cancellationToken: cts.Token);
 
