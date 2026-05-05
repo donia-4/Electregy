@@ -114,7 +114,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
         private async Task<string> GetDevicesJsonAsync(string userId, CancellationToken ct)
         {
             var devicesCount = await _context.Devices.CountAsync();
-            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, devicesCount );
+            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, devicesCount);
 
             if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
                 return null;
@@ -172,7 +172,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                         $"محادثاتناالسابقة: {history}" +
                          "تعليمات: -لو السؤال عن الكهرباء أو التوفير → جاوب" +
                          "- لو خارج الموضوع تمامًا → ارفض" +
-                         "- اجعل الإجابة 4 - 7 جمل واضحة ";
+                         "- اجعل الإجابة 3 - 5 جمل واضحة ";
             }
             else
             {
@@ -182,7 +182,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
                         "التعليمات:- حدد أعلى الأجهزة استهلاكاً- راقب استهلاكها في ساعات الذروة (6-11 مساءً)" +
                         "- اذكر توفير تقريبي بالجنيه المصري القواعد:- لا تسأل المستخدم أي أسئلة - لا تذكر أنك AI" +
                         "- استخدم البيانات فقط - لو لا توجد بيانات كافية قل: لا توجد بيانات كافية للتحليل الرد:" +
-                        "4-7 جمل باللهجة المصرية، تحليل + توصية + توفير.";
+                        "3-5 جمل باللهجة المصرية، تحليل + توصية + توفير.";
             }
             throw new ArgumentException("Invalid prompt type");
         }
@@ -205,6 +205,7 @@ namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
 
                     return response?.Text;
                 });
+
                 if (string.IsNullOrWhiteSpace(result))
                 {
                     return (HttpStatusCode.BadRequest, "Empty response from Gemini");
