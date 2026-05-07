@@ -68,15 +68,15 @@ namespace PeakWise.Application.Workers
                                 DeviceName = device.Name,
                                 AddedAt = device.CreatedAt,
                                 deviceType = device.Type,
-                                message = _simulatorState.IsAnomalyActive? "The unit is drawing unusual current levels":"The unit is drawing usual current levels",
+                                message = _simulatorState.IsAnomalyActive ? "The unit is drawing unusual current levels" : "The unit is drawing usual current levels",
                                 Timestamp = DateTime.UtcNow,
                                 WattsConsumed = currentWatts,
                                 IsAbnormal = _simulatorState.IsAnomalyActive ? true : false
                             };
-                            if(response.IsAbnormal) 
-                            await _hubContext.Clients.Users(device.UserId).SendAsync("ReceivePowerAlert", response);
+                            if (response.IsAbnormal)
+                                await _hubContext.Clients.Users(device.UserId).SendAsync("ReceivePowerAlert", response);
                             //readinsResponse.Add(response);
-                          
+
                         }
 
 
