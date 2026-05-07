@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PeakWise.Infrastructure.Service
+namespace PeakWise.Infrastructure.ExternalServices.SmartAssistant
 {
     public class TokenManager
     {

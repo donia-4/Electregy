@@ -15,12 +15,12 @@ namespace PeakWise.Application.Features
 {
     public class ConsumptionService : IConsumptionService
     {
-        private readonly AppDbContext _context;
+        private readonly IAppDbContext _context;
         private readonly ResponseHandler _responseHandler;
         private readonly ILogger<ConsumptionService> _logger;
         private const double TariffRateEGP = 1.77;
 
-        public ConsumptionService(AppDbContext context, ResponseHandler responseHandler, ILogger<ConsumptionService> logger)
+        public ConsumptionService(IAppDbContext context, ResponseHandler responseHandler, ILogger<ConsumptionService> logger)
         {
             _context = context;
             _responseHandler = responseHandler;
@@ -35,7 +35,7 @@ namespace PeakWise.Application.Features
                 var startOfMonth = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
                 // Get all readings for the user's devices
-                var userReadings = _context.Set<Reading>()
+                var userReadings = _context.Set<Readings>()
                     .Include(r => r.Device)
                     .Where(r => r.Device.UserId == userId)
                     .AsNoTracking();
@@ -80,7 +80,7 @@ namespace PeakWise.Application.Features
                 if (!ownsDevice)
                     return _responseHandler.NotFound<PaginatedList<ReadingResponse>>("Device not found.");
 
-                var query = _context.Set<Reading>()
+                var query = _context.Set<Readings>()
                     .Where(r => r.DeviceId == deviceId)
                     .OrderByDescending(r => r.Timestamp)
                     .Select(r => new ReadingResponse
@@ -110,7 +110,7 @@ namespace PeakWise.Application.Features
                 var last24Hours = DateTime.UtcNow.AddHours(-24);
 
                 // جلب القراءات لليوزر ده بس
-                var readings = await _context.Set<Reading>()
+                var readings = await _context.Set<Readings>()
                     .Include(r => r.Device)
                     .Where(r => r.Device.UserId == userId && r.Timestamp >= last24Hours)
                     .AsNoTracking()
@@ -136,11 +136,11 @@ namespace PeakWise.Application.Features
                 var existing = _context.Set<DailyConsumption>()
                     .Where(d => d.UserId == userId && d.Date >= last24Hours);
 
-                _context.RemoveRange(existing);
+                _context.Set<DailyConsumption>().RemoveRange(existing);
 
                 // إضافة البيانات الجديدة
                 await _context.Set<DailyConsumption>().AddRangeAsync(hourlyData);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(default);
 
                 return _responseHandler.Success(true, "Chart data aggregated successfully.");
             }

@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PeakWise.Domain.Entities;
 
-public class ReadingConfiguration : IEntityTypeConfiguration<Reading>
+public class ReadingConfiguration : IEntityTypeConfiguration<Readings>
 {
-    public void Configure(EntityTypeBuilder<Reading> builder)
+    public void Configure(EntityTypeBuilder<Readings> builder)
     {
         builder.Property(x => x.Timestamp)
             .IsRequired();

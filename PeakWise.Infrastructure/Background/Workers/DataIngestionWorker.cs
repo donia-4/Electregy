@@ -8,8 +8,9 @@ using PeakWise.API.Hubs;
 using Microsoft.AspNetCore.Http;
 using PeakWise.Application.DTOs.Readings;
 using Humanizer;
+using PeakWise.Infrastructure.Common;
 
-namespace PeakWise.Application.Workers
+namespace PeakWise.Infrastructure.Background.Workers
 {
     public class DataIngestionWorker : BackgroundService
     {
@@ -17,15 +18,13 @@ namespace PeakWise.Application.Workers
         private readonly MockSimulatorState _simulatorState;
         private readonly ILogger<DataIngestionWorker> _logger;
         private readonly IHubContext<ConsumptionHub> _hubContext;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         public DataIngestionWorker(IServiceScopeFactory scopeFactory, MockSimulatorState simulatorState,
-            ILogger<DataIngestionWorker> logger, IHubContext<ConsumptionHub> hubContext, IHttpContextAccessor httpContextAccessor)
+            ILogger<DataIngestionWorker> logger, IHubContext<ConsumptionHub> hubContext)
         {
             _scopeFactory = scopeFactory;
             _simulatorState = simulatorState;
             _logger = logger;
             _hubContext = hubContext;
-            _httpContextAccessor = httpContextAccessor;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -44,7 +43,7 @@ namespace PeakWise.Application.Workers
                     if (activeDevices.Any())
                     {
                         var random = new Random();
-                        var readings = new List<Reading>();
+                        var readings = new List<Readings>();
                         //var readinsResponse = new List<ReadingsDto>();
 
                         foreach (var device in activeDevices)
@@ -55,7 +54,7 @@ namespace PeakWise.Application.Workers
                                 ? random.Next(3000, 4500)
                                 : random.Next((int)(device.Watts * 0.8), (int)(device.Watts * 1.2));
 
-                            readings.Add(new Reading
+                            readings.Add(new Readings
                             {
                                 DeviceId = device.Id,
                                 WattsConsumed = currentWatts,
@@ -80,7 +79,7 @@ namespace PeakWise.Application.Workers
                         }
 
 
-                        await dbContext.Set<Reading>().AddRangeAsync(readings, stoppingToken);
+                        await dbContext.Set<Readings>().AddRangeAsync(readings, stoppingToken);
                         await dbContext.SaveChangesAsync(stoppingToken);
                     }
                 }

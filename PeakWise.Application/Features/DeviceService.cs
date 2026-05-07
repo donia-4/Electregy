@@ -10,14 +10,14 @@ namespace PeakWise.Application.Features.Devices
 {
     public class DeviceService : IDeviceService
     {
-        private readonly AppDbContext _context; 
+        private readonly IAppDbContext _context; 
         private readonly ResponseHandler _responseHandler;
         private readonly ILogger<DeviceService> _logger;
 
         // Average Egyptian electricity tariff rate (Can be moved to configuration) // later
         private const double TariffRateEGP = 1.77;
 
-        public DeviceService(AppDbContext context, ResponseHandler responseHandler, ILogger<DeviceService> logger)
+        public DeviceService(IAppDbContext context, ResponseHandler responseHandler, ILogger<DeviceService> logger)
         {
             _context = context;
             _responseHandler = responseHandler;
@@ -40,7 +40,7 @@ namespace PeakWise.Application.Features.Devices
                 };
 
                 await _context.Set<Device>().AddAsync(device);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(default);
 
                 var response = MapToResponse(device);
                 return _responseHandler.Created(response, "Device created successfully.");
@@ -119,7 +119,7 @@ namespace PeakWise.Application.Features.Devices
                 }
 
                 _context.Set<Device>().Update(device);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(default);
 
                 var response = MapToResponse(device);
                 return _responseHandler.Success(response, "Device updated successfully.");
@@ -147,11 +147,11 @@ namespace PeakWise.Application.Features.Devices
                 // Explicit removal here ensures it happens even without cascade configuration.
                 if (device.Readings != null && device.Readings.Any())
                 {
-                    _context.Set<Reading>().RemoveRange(device.Readings);
+                    _context.Set<Readings>().RemoveRange(device.Readings);
                 }
 
                 _context.Set<Device>().Remove(device);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(default);
 
                 return _responseHandler.Success<string>(null, "Device and associated readings deleted successfully.");
             }

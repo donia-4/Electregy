@@ -23,7 +23,7 @@ namespace PeakWise.Domain.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<Reading> Readings { get; set; }
+        public ICollection<Readings> Readings { get; set; }
         public ICollection<Alert> Alerts { get; set; }
     }
 }

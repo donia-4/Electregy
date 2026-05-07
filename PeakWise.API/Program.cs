@@ -20,7 +20,10 @@ using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Common;
 using PeakWise.Infrastructure;
-using PeakWise.Infrastructure.Service;
+using PeakWise.Infrastructure.Background.Workers;
+using PeakWise.Infrastructure.Common;
+using PeakWise.Infrastructure.ExternalServices.CafeMangment;
+using PeakWise.Infrastructure.ExternalServices.SmartAssistant;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
 
@@ -134,8 +137,9 @@ builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
 builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
+builder.Services.AddScoped<IAppDbContext, AppDbContext>();
 builder.Services.AddSingleton<MockSimulatorState>();
-builder.Services.AddHostedService<PeakWise.Application.Workers.DataIngestionWorker>();
+builder.Services.AddHostedService<DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
 
 builder.Services.AddSignalR(options =>

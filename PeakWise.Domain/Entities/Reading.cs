@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PeakWise.Domain.Entities
 {
-    public class Reading
+    public class Readings
     {
         public int Id { get; set; }
 

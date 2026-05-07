@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PeakWise.Application
+namespace PeakWise.Infrastructure.Common
 {
     public class MockSimulatorState
     {

@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Mscc.GenerativeAI;
 using Mscc.GenerativeAI.Types;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Entities;
 using PeakWise.Domain.Enums;
 using PeakWise.Infrastructure.Migrations;
-using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChatSession = PeakWise.Domain.Entities.ChatSession;
 
-namespace PeakWise.Application.ExternalServices.Services.SmartAssistant
+namespace PeakWise.Infrastructure.ExternalServices.SmartAssistant
 {
     public class SamrtAssistantService : ISmartAssistantService
     {

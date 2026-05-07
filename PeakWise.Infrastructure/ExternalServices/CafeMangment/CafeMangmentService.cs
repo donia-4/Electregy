@@ -1,14 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using PeakWise.Application.DTOs.CafeMangment;
+﻿using PeakWise.Application.ExternalServices.Services.CafeMangment;
 using PeakWise.Shared.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace PeakWise.Application.ExternalServices.Services.CafeMangment
+namespace PeakWise.Infrastructure.ExternalServices.CafeMangment
 {
     public class CafeMangmentService : ICafeMangmentService
     {

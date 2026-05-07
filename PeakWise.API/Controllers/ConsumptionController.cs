@@ -6,6 +6,7 @@ using PeakWise.Application;
 using PeakWise.Application.DTOs.Consumption;
 using PeakWise.Application.Interfaces;
 using PeakWise.Infrastructure;
+using PeakWise.Infrastructure.Common;
 using PeakWise.Shared.Pagination;
 using PeakWise.Shared.Responses;
 
