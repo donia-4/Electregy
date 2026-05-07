@@ -1,0 +1,215 @@
+<div class="devices-container">
+
+    <!-- Header Stats (Matching Image 2) -->
+    
+    <div class="page-action-bar">
+        <button class="btn-add-main" (click)="openAddModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2"><line x1="12" y1="5" x2="12"
+                    y2="19"></line><line x1="5" y1="12" x2="19"
+                    y2="12"></line></svg>
+            Add New Device
+        </button>
+    </div>
+    <!-- Active Inventory Table (Matching Image 1) -->
+    <div class="table-section">
+        <div class="section-header">
+            
+            <h3>Active Inventory</h3>
+            <div class="filters">
+                <span class="filter-label">GRID ALPHA</span>
+                <button class="btn-icon"><svg viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2"><polygon
+                            points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>DEVICE</th>
+                        <th>TYPE</th>
+                        <th>WATTS</th>
+                        <th>HOURS</th>
+                        <th>COST (EGP)</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let device of devices">
+                        <td>
+                            <div class="device-info">
+
+                                <div>
+                                    <div class="device-name">{{ device.name
+                                        }}</div>
+                                    <div class="device-id">{{ device.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ device.type }}</td>
+                        <td>{{ device.watts | number }}</td>
+                        <td>{{ device.hoursPerDay }}</td>
+                        <td class="cost">{{ device.estimatedMonthlyCostEGP
+                            }}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn"
+                                    (click)="openEditModal(device)"><svg
+                                        viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"><path
+                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path
+                                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                                <button class="action-btn delete"
+                                    (click)="openDeleteModal(device)"><svg
+                                        viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"><polyline
+                                            points="3 6 5 6 21 6"></polyline><path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <span>
+                Page {{pageNumber}} of {{totalPages}}
+            </span>
+
+            <div class="nav-buttons">
+                <button (click)="prevPage()" [disabled]="!hasPreviousPage">
+                    Previous
+                </button>
+
+                <button (click)="nextPage()" [disabled]="!hasNextPage">
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- ADD MODAL -->
+<div class="modal-backdrop" *ngIf="isAddModalOpen">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+            <h3>Add New Device</h3>
+            <button class="close-btn" (click)="closeAddModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+
+            <div class="form-group">
+                <label>DEVICE NAME</label>
+                <input type="text" [(ngModel)]="newDevice.name">
+            </div>
+
+            <div class="form-group">
+                <label>DEVICE TYPE</label>
+                <select [(ngModel)]="newDevice.type">
+                    <option value="Fridge">Fridge</option>
+                    <option value="AC">AC</option>
+                    <option value="WashingMachine">Washing Machine</option>
+                    <option value="WaterHeater">Water Heater</option>
+                    <option value="TV">TV</option>
+                    <option value="Lighting">Lighting</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>WATTS</label>
+                    <input type="number" [(ngModel)]="newDevice.watts">
+                </div>
+
+                <div class="form-group half">
+                    <label>HOURS</label>
+                    <input type="number" [(ngModel)]="newDevice.hoursPerDay">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+
+            <button
+                class="btn-save"
+                (click)="addNewDevice()">
+                Add Device
+            </button>
+        </div>
+
+    </div>
+</div>
+<div class="modal-backdrop" *ngIf="isEditModalOpen">
+    <div class="modal-container edit-mode" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Edit Device</h2>
+            <button class="close-btn" (click)="closeEditModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>DEVICE NAME</label>
+                <input type="text" [(ngModel)]="selectedDeviceForEdit!.name">
+            </div>
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>TYPE</label>
+                    <input type="text"
+                        [(ngModel)]="selectedDeviceForEdit!.type">
+                    placeholder="e.g. Industrial">
+
+                </div>
+                <div class="form-group half">
+                    <label>WATTS (RATING)</label>
+                    <input type="number"
+                        [(ngModel)]="selectedDeviceForEdit!.watts">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>DAILY HOURS</label>
+                <input type="number"
+                    [(ngModel)]="selectedDeviceForEdit!.hoursPerDay">
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel"
+                (click)="closeEditModal()">Cancel</button>
+            <button class="btn-save"
+                (click)="saveEditChanges()">Save
+                Changes</button>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop delete-backdrop" *ngIf="isDeleteModalOpen">
+    <div class="modal-container delete-modal"
+        (click)="$event.stopPropagation()">
+
+        <div class="delete-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2"><path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line
+                    x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17"
+                    x2="12.01" y2="17"></line></svg>
+        </div>
+
+        <h2>Remove Device?</h2>
+        <p>You are about to permanently delete <strong>{{ deviceToDelete?.name
+                }}</strong> from the kinetic management ecosystem.</p>
+
+        <div class="modal-footer delete-footer">
+            <button class="btn-cancel-outline"
+                (click)="closeDeleteModal()">CANCEL</button>
+            <button class="btn-delete-red"
+                (click)="confirmDelete()">DELETE</button>
+        </div>
+
+    </div>
+</div>
