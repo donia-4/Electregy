@@ -1,24 +1,31 @@
+using System;
+using System.Text;
+using System.Text.Json.Serialization;
 using FluentValidation;
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PeakWise.API.ExceptionHandling;
 using PeakWise.API.Middlewares;
+using PeakWise.Application;
 using PeakWise.Application.DTOs.Auth;
-using PeakWise.Application.ExternalServices.Services;
+using PeakWise.Application.ExternalServices.Services.CafeMangment;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using PeakWise.Application.Features;
 using PeakWise.Application.Features.Devices;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Common;
-using PeakWise.Domain.Entities;
-using PeakWise.Infrastructure.Service;
+using PeakWise.Infrastructure;
+using PeakWise.Infrastructure.Background.Workers;
+using PeakWise.Infrastructure.Common;
+using PeakWise.Infrastructure.ExternalServices.CafeMangment;
+using PeakWise.Infrastructure.ExternalServices.SmartAssistant;
 using PeakWise.Shared.Responses;
 using StackExchange.Redis;
-using System;
-using System.Text;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,7 +65,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 // 1. Database & Redis Configuration
-var connectionString = builder.Configuration.GetConnectionString("DevCS");
+var connectionString = builder.Configuration.GetConnectionString("ProdCS");
 var redisConnection = builder.Configuration.GetConnectionString("Redis");
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnection));
@@ -111,7 +118,7 @@ builder.Services.AddAuthentication(options =>
         {
             var path = context.HttpContext.Request.Path;
             var token = context.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(token) && (path.StartsWithSegments("/chatbot")))
+            if (!string.IsNullOrEmpty(token) && ((path.StartsWithSegments("/chatbot")|| path.StartsWithSegments("/consumption"))))
             {
                 context.Token = token;
             }
@@ -129,10 +136,22 @@ builder.Services.AddScoped<ResponseHandler>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenStoreService, TokenStoreService>();
+builder.Services.AddScoped<IConsumptionService, ConsumptionService>();
+builder.Services.AddScoped<IAppDbContext, AppDbContext>();
+builder.Services.AddSingleton<MockSimulatorState>();
+builder.Services.AddHostedService<DataIngestionWorker>();
 builder.Services.AddScoped<ISmartAssistantService, SamrtAssistantService>();
-builder.Services.AddSignalR();
-builder.Services.AddSingleton<TokenManager>();
 
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+});
+builder.Services.AddSingleton<TokenManager>();
+builder.Services.AddHttpClient<ICafeMangmentService, CafeMangmentService>(client =>
+{
+    client.BaseAddress = new Uri("https://ignoredmember-peakwise.hf.space/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 // =======================================================================
 // 5. Global Exception Handling with ProblemDetails And Custom Middleware
@@ -153,11 +172,18 @@ builder.Services.AddCors(opt =>
             .SetIsOriginAllowed(_ => true);
         });
 });
-
 // ==========================================
 // 6. FluentValidation Registration
 // ==========================================
 builder.Services.AddValidatorsFromAssemblyContaining<CreateDeviceValidator>();
+
+// Hangfire Configuration
+builder.Services.AddHangfire(config => config
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("ProdCS")));
+
+builder.Services.AddHangfireServer();
 
 var app = builder.Build();
 
@@ -185,7 +211,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -194,9 +220,20 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseExceptionHandler();
 app.UseMiddleware<StopwatchRequestMiddleware>();
+app.UseHangfireDashboard();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHub<PeakWise.API.Hubs.ChatbotHub>("/chatbot").RequireAuthorization();
+
+app.MapHub<PeakWise.API.Hubs.ConsumptionHub>("/consumption").RequireAuthorization();
+using (var scope = app.Services.CreateScope())
+{
+    // Recurring Job Registration
+    RecurringJob.AddOrUpdate<IConsumptionService>(
+        "refresh-all-charts",
+        service => service.AggregateAllUsersChartDataAsync(),
+        Cron.Hourly);
+}
 app.MapControllers();
 
 app.Run();

@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+
+PeakWise.API/appsettings.json
+replacements.txt

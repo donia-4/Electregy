@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PeakWise.Application.ExternalServices.Services;
+using PeakWise.Application.DTOs.SmartAssistant;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using System.Security.Claims;
 
 namespace PeakWise.API.Controllers
@@ -19,11 +20,11 @@ namespace PeakWise.API.Controllers
 
         [Authorize]
         [HttpPost("chatbot")]
-        public async Task<IActionResult> Chat([FromBody] string userInput, CancellationToken ct)
+        public async Task<IActionResult> Chat([FromBody] ChatbotRequest request, CancellationToken ct)
         {
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotWithSessionAsync(userInput, userId, ct);
+            var response = await _chatWithGemeniAsChatbot.ChatWithGemeniAsChatbotWithSessionAsync(request.userInput, userId, ct);
             return Ok(new { Response = response });
         }
         [Authorize]

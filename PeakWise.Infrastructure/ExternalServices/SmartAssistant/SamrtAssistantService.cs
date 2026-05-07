@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Mscc.GenerativeAI;
 using Mscc.GenerativeAI.Types;
+using PeakWise.Application.ExternalServices.Services.SmartAssistant;
 using PeakWise.Application.Interfaces;
 using PeakWise.Domain.Entities;
 using PeakWise.Domain.Enums;
 using PeakWise.Infrastructure.Migrations;
-using PeakWise.Infrastructure.Service;
 using PeakWise.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using ChatSession = PeakWise.Domain.Entities.ChatSession;
 
-namespace PeakWise.Application.ExternalServices.Services
+namespace PeakWise.Infrastructure.ExternalServices.SmartAssistant
 {
     public class SamrtAssistantService : ISmartAssistantService
     {
@@ -113,18 +113,21 @@ namespace PeakWise.Application.ExternalServices.Services
 
         private async Task<string> GetDevicesJsonAsync(string userId, CancellationToken ct)
         {
-            var deviceInfo = await _deviceService.GetUserDevicesAsync(userId, 1, 25, ct);
+            var devicesCount = await _context.Devices.CountAsync();
+            var deviceInfo = await _deviceService.GetDevicesConsumptionSummaryAsync(userId, 1, devicesCount);
 
             if (deviceInfo?.Data?.Items == null || !deviceInfo.Data.Items.Any())
                 return null;
 
             var items = deviceInfo.Data.Items.Select(d => new
             {
-                name = d.Name,
-                type = ((DeviceType)int.Parse(d.Type)).ToString(),
-                watts = d.Watts,
-                hoursPerDay = d.HoursPerDay,
-                estimatedMonthlyCostEGP = d.EstimatedMonthlyCostEGP
+                DeviceType = Enum.TryParse<DeviceType>(d.DeviceType, true, out var deviceType) ? deviceType.ToString() : "Unknown",
+                d.UsageKW,
+                d.MonthCostEGP,
+                d.TodayCostEGP,
+                d.TodayHours,
+                d.Name,
+                d.TodayKwh
             });
 
             return JsonSerializer.Serialize(new { items }, new JsonSerializerOptions
@@ -153,23 +156,23 @@ namespace PeakWise.Application.ExternalServices.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _context.ChatMessages.Add(userMsg);
+                await _context.ChatMessages.AddAsync(userMsg);
                 await _context.SaveChangesAsync(ct);
 
                 var chatHistory = await _context.ChatMessages
                     .Where(x => x.UserId == userId)
                     .OrderByDescending(x => x.CreatedAt)
-                    .Take(10)
+                    .Take(5)
                     .ToListAsync(ct);
                 var history = BuildHistory(chatHistory);
 
                 return $"أنت مساعد ذكي لتطبيق Electregy.مهمتك:- مساعدة المستخدم في تقليل استهلاك الكهرباء" +
-                         "- تحليل أجهزته وتقديم نصائح" +
+                         "- تحليل أجهزته ولازم تجاوب بالنسبة للمدخلات بتاعته" +
                          $"بيانات الأجهزة: {devices} سؤال المستخدم: {userInput}" +
-                     $"محادثاتناالسابقة: {history}" +
+                        $"محادثاتناالسابقة: {history}" +
                          "تعليمات: -لو السؤال عن الكهرباء أو التوفير → جاوب" +
                          "- لو خارج الموضوع تمامًا → ارفض" +
-                         "- اجعل الإجابة 3 - 5 جمل واضحة";
+                         "- اجعل الإجابة 3 - 4 جمل واضحة ";
             }
             else
             {
@@ -179,7 +182,7 @@ namespace PeakWise.Application.ExternalServices.Services
                         "التعليمات:- حدد أعلى الأجهزة استهلاكاً- راقب استهلاكها في ساعات الذروة (6-11 مساءً)" +
                         "- اذكر توفير تقريبي بالجنيه المصري القواعد:- لا تسأل المستخدم أي أسئلة - لا تذكر أنك AI" +
                         "- استخدم البيانات فقط - لو لا توجد بيانات كافية قل: لا توجد بيانات كافية للتحليل الرد:" +
-                        "3-5 جمل باللهجة المصرية، تحليل + توصية + توفير.";
+                        "3-4 جمل باللهجة المصرية، تحليل + توصية + توفير.";
             }
             throw new ArgumentException("Invalid prompt type");
         }
@@ -189,18 +192,20 @@ namespace PeakWise.Application.ExternalServices.Services
         {
             try
             {
-                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(75));
                 GenerateContentResponse? response = null;
                 //Console.WriteLine(prompt.Length);
                 var result = await _tokenManager.ExecuteWithRetry(async token =>
                 {
                     var googleAI = new GoogleAI(token);
-                    var model = googleAI.GenerativeModel("gemini-2.5-flash");
+                    //var model = googleAI.GenerativeModel("gemini-2.5-flash");
+                    var model = googleAI.GenerativeModel("gemini-flash-lite-latest");
 
                     var response = await model.GenerateContent(prompt, cancellationToken: cts.Token);
 
                     return response?.Text;
                 });
+
                 if (string.IsNullOrWhiteSpace(result))
                 {
                     return (HttpStatusCode.BadRequest, "Empty response from Gemini");

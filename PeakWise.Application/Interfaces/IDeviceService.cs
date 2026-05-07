@@ -15,6 +15,8 @@ namespace PeakWise.Application.Interfaces
         Task<Response<PaginatedList<DeviceResponse>>> GetUserDevicesAsync(string userId, int pageNumber, int pageSize,CancellationToken token = default);
         Task<Response<DeviceResponse>> UpdateDeviceAsync(string userId, UpdateDeviceRequest request);
         Task<Response<string>> DeleteDeviceAsync(string userId, int deviceId);
-        //Task GetUserDevicesAsync(CancellationToken ct);
+
+        Task<Response<PaginatedList<DeviceConsumptionSummaryResponse>>> GetDevicesConsumptionSummaryAsync(string userId, int pageNumber, int pageSize);
+        Task<Response<DeviceConsumptionSummaryResponse>> GetDeviceConsumptionByIdAsync(string userId, int deviceId);
     }
 }

@@ -22,9 +22,9 @@ namespace PeakWise.Application.Features
         private readonly SymmetricSecurityKey _symmetricSecurityKey;
         private readonly UserManager<AppUser> _userManager; // To get user roles 
         private readonly JwtSettings _jwtSettings;
-        private readonly AppDbContext _authContext;
+        private readonly IAppDbContext _authContext;
 
-        public TokenStoreService(IOptions<JwtSettings> jwtOptions, UserManager<AppUser> userManager, AppDbContext authContext)
+        public TokenStoreService(IOptions<JwtSettings> jwtOptions, UserManager<AppUser> userManager, IAppDbContext authContext)
         {
             _jwtSettings = jwtOptions.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
             _userManager = userManager;
@@ -80,7 +80,7 @@ namespace PeakWise.Application.Features
                 IsUsed = false
             });
 
-            await _authContext.SaveChangesAsync();
+            await _authContext.SaveChangesAsync(default);
         }
         public async Task InvalidateOldTokensAsync(string userId)
         {

@@ -15,14 +15,14 @@ namespace PeakWise.Application.Features
     public class AuthService : IAuthService
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly AppDbContext _context;
+        private readonly IAppDbContext _context;
         private readonly ResponseHandler _responseHandler;
         private readonly ITokenStoreService _tokenStoreService;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<AppUser> userManager,
-            AppDbContext context,
+            IAppDbContext context,
             ResponseHandler responseHandler,
             ITokenStoreService tokenStoreService,
             ILogger<AuthService> logger)
